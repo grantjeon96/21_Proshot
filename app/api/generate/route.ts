@@ -42,25 +42,25 @@ export async function POST(req: NextRequest) {
     // Map style to an English prompt (corporate/studio/outdoor professional headshot)
     let prompt = "";
     if (style === "corporate") {
-      prompt = "A high-quality, professional corporate business headshot of a person, clean white background, even studio lighting, looking directly at the camera, wearing professional business suit attire, 8k resolution, crisp detail";
+      prompt = "A razor-sharp, ultra-realistic professional corporate business passport headshot of a person, sharp focus on face, crisp eye detail, clean solid white background, even studio lighting, looking directly at the camera, wearing dark professional business suit attire, 8k resolution, photorealistic, highly detailed skin texture";
     } else if (style === "studio") {
-      prompt = "A classic clean professional studio portrait headshot of a person, solid neutral light background, soft flattering studio lighting, looking directly at the camera, professional presentation, highly detailed, 8k resolution";
+      prompt = "A razor-sharp, ultra-detailed clean professional studio portrait passport photo of a person, sharp focus on face, clear eyes, solid neutral light gray background, balanced studio portrait lighting, looking directly at the camera, professional presentation, 8k resolution, photorealistic";
     } else if (style === "outdoor") {
-      prompt = "A professional headshot of a person in outdoor natural lighting, soft daylight, slightly blurred natural park background, shallow depth of field, looking directly at the camera, professional clothing, highly detailed";
+      prompt = "A sharp focus, highly detailed professional portrait headshot of a person in natural lighting, clear crisp facial features, looking directly at the camera, professional smart casual attire, 8k resolution, photorealistic, sharp portrait";
     } else {
-      prompt = "A high-quality, professional corporate business headshot of a person, clean white background, even studio lighting, looking directly at the camera, 8k resolution";
+      prompt = "A razor-sharp, ultra-realistic professional passport headshot of a person, sharp focus on face, clean solid white background, even studio lighting, looking directly at the camera, 8k resolution, photorealistic";
     }
 
-    // Call fal.subscribe for fal-ai/flux-pulid
+    // Call fal.subscribe for fal-ai/flux-pulid with optimized parameters for maximum sharpness
     const result = await fal.subscribe("fal-ai/flux-pulid", {
       input: {
         prompt,
         reference_image_url,
         image_size: "portrait_4_3",
-        num_inference_steps: 20,
-        guidance_scale: 4,
-        id_weight: 1,
-        negative_prompt: "blurry, low quality, distorted face, watermark, text"
+        num_inference_steps: 28,
+        guidance_scale: 3.5,
+        id_weight: 0.92,
+        negative_prompt: "blurry, out of focus, soft focus, bokeh, depth of field blur, fuzzy, low resolution, noise, distortion, watermark, text, bad anatomy, deformed eyes, double chin"
       }
     }) as { data?: { images?: Array<{ url: string }> } };
 
