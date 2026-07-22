@@ -153,6 +153,7 @@ export default function Home() {
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
                   sizes="(max-w-768px) 100vw, 33vw"
                   priority
+                  unoptimized
                 />
               </div>
               <div className="mt-4 flex items-center justify-between">
@@ -179,6 +180,7 @@ export default function Home() {
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
                   sizes="(max-w-768px) 100vw, 33vw"
                   priority
+                  unoptimized
                 />
               </div>
               <div className="mt-4 flex items-center justify-between">
@@ -205,6 +207,7 @@ export default function Home() {
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
                   sizes="(max-w-768px) 100vw, 33vw"
                   priority
+                  unoptimized
                 />
               </div>
               <div className="mt-4 flex items-center justify-between">
