@@ -30,29 +30,13 @@ export async function POST(req: NextRequest) {
     // Wrap the buffer in a Blob with mime type image/jpeg
     const blob = new Blob([buffer], { type: "image/jpeg" });
 
-    // Upload via fal.storage.upload() to get a reference URL
-    let reference_image_url: string;
+    // Try uploading via fal.storage.upload(), fallback to base64 Data URL if upload times out
+    let reference_image_url = imageBase64;
     try {
       reference_image_url = await fal.storage.upload(blob);
     } catch (uploadError: any) {
-      console.error("Fal storage upload error:", uploadError);
-      const detail = uploadError?.body?.detail || uploadError?.message || "";
-      if (uploadError?.status === 403 || detail.includes("Exhausted balance")) {
-        return NextResponse.json(
-          { error: "fal.ai API 계정의 잔액(크레딧)이 소진되었습니다. fal.ai/dashboard/billing 에서 결제 정보 등록 또는 잔액을 충전해 주세요." },
-          { status: 403 }
-        );
-      }
-      if (uploadError?.status === 401 || detail.includes("Unauthorized")) {
-        return NextResponse.json(
-          { error: "등록된 fal.ai API 키가 유효하지 않습니다. 키를 다시 확인해 주세요." },
-          { status: 401 }
-        );
-      }
-      return NextResponse.json(
-        { error: "AI 클라우드에 이미지 업로드를 실패했습니다. API 키 및 잔액 상태를 확인해 주세요." },
-        { status: 500 }
-      );
+      console.warn("Fal storage upload failed/timed out, falling back to data URL:", uploadError?.message || uploadError);
+      // Keep reference_image_url as imageBase64 data URL
     }
 
     // Map style to an English prompt (corporate/studio/outdoor professional headshot)
