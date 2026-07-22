@@ -34,10 +34,23 @@ export async function POST(req: NextRequest) {
     let reference_image_url: string;
     try {
       reference_image_url = await fal.storage.upload(blob);
-    } catch (uploadError) {
+    } catch (uploadError: any) {
       console.error("Fal storage upload error:", uploadError);
+      const detail = uploadError?.body?.detail || uploadError?.message || "";
+      if (uploadError?.status === 403 || detail.includes("Exhausted balance")) {
+        return NextResponse.json(
+          { error: "fal.ai API 계정의 잔액(크레딧)이 소진되었습니다. fal.ai/dashboard/billing 에서 결제 정보 등록 또는 잔액을 충전해 주세요." },
+          { status: 403 }
+        );
+      }
+      if (uploadError?.status === 401 || detail.includes("Unauthorized")) {
+        return NextResponse.json(
+          { error: "등록된 fal.ai API 키가 유효하지 않습니다. 키를 다시 확인해 주세요." },
+          { status: 401 }
+        );
+      }
       return NextResponse.json(
-        { error: "AI 클라우드에 이미지 업로드를 실패했습니다. 인터넷 연결을 확인해 주세요." },
+        { error: "AI 클라우드에 이미지 업로드를 실패했습니다. API 키 및 잔액 상태를 확인해 주세요." },
         { status: 500 }
       );
     }
@@ -72,9 +85,15 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ imageUrl: result.data.images[0].url });
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error("Generation route error:", error);
-    // Wrap in try/catch; ALL error messages to the client must be in Korean; never leak the key or raw errors
+    const detail = error?.body?.detail || error?.message || "";
+    if (error?.status === 403 || detail.includes("Exhausted balance")) {
+      return NextResponse.json(
+        { error: "fal.ai API 계정의 잔액(크레딧)이 소진되었습니다. fal.ai/dashboard/billing 에서 잔액을 충전해 주세요." },
+        { status: 403 }
+      );
+    }
     return NextResponse.json(
       { error: "AI 사진 생성 과정에서 오류가 발생했습니다. 잠시 후 다시 시도해 주세요." },
       { status: 500 }
