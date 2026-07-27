@@ -97,18 +97,20 @@ export default function UploadCard() {
     }
   }, [generatedImageUrl, showToast]);
 
+  // ── Load saved state on mount (restores generated photo after Toss payment redirect) ──
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const uses = localStorage.getItem("proshot_uses");
-      if (uses) {
-        setUsesCount(parseInt(uses, 10));
-      } else {
-        localStorage.setItem("proshot_uses", "0");
+      const savedUses = localStorage.getItem("proshot_uses");
+      if (savedUses) {
+        setUsesCount(parseInt(savedUses, 10));
       }
-
-      const paidStatus = localStorage.getItem("proshot_is_paid");
-      if (paidStatus === "true") {
+      const savedPaid = localStorage.getItem("proshot_is_paid");
+      if (savedPaid === "true") {
         setIsPaid(true);
+      }
+      const savedImage = localStorage.getItem("proshot_generated_image");
+      if (savedImage) {
+        setGeneratedImageUrl(savedImage);
       }
     }
   }, []);
@@ -262,6 +264,7 @@ export default function UploadCard() {
       }
 
       setGeneratedImageUrl(data.imageUrl);
+      localStorage.setItem("proshot_generated_image", data.imageUrl);
       showToast("여권사진이 성공적으로 생성되었습니다!", "success");
 
       const newUses = usesCount + 1;
