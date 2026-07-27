@@ -32,8 +32,9 @@ export async function POST(req: NextRequest) {
     let reference_image_url = imageBase64;
     try {
       reference_image_url = await fal.storage.upload(blob);
-    } catch (uploadError: any) {
-      console.warn("Fal storage upload failed/timed out, falling back to data URL:", uploadError?.message || uploadError);
+    } catch (uploadError: unknown) {
+      const err = uploadError as { message?: string };
+      console.warn("Fal storage upload failed/timed out, falling back to data URL:", err?.message || uploadError);
       // Keep reference_image_url as imageBase64 data URL
     }
 
@@ -67,17 +68,18 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ imageUrl: result.data.images[0].url });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Generation route error:", error);
-    const detail = error?.body?.detail || error?.message || "";
-    if (error?.status === 403 || detail.includes("Exhausted balance")) {
+    const err = error as { status?: number; body?: { detail?: string }; message?: string };
+    const detail = err?.body?.detail || err?.message || "";
+    if (err?.status === 403 || detail.includes("Exhausted balance")) {
       return NextResponse.json(
         { error: "fal.ai API 계정의 잔액(크레딧)이 소진되었습니다. fal.ai/dashboard/billing 에서 잔액을 충전해 주세요." },
         { status: 403 }
       );
     }
     return NextResponse.json(
-      { error: "AI 사진 생성 과정에서 오류가 발생했습니다. 잠시 후 다시 시도해 주세요." },
+      { error: "사진 생성 과정에서 오류가 발생했습니다. 잠시 후 다시 시도해 주세요." },
       { status: 500 }
     );
   }
