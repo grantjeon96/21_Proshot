@@ -56,28 +56,36 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Map style to an English prompt (corporate/studio/outdoor professional headshot)
+    // Map style to an English prompt – emphasise tack-sharp focus for passport use
+    const sharpCore =
+      "tack-sharp in-focus, 97% exact face preservation, crisp skin texture, sharp iris detail, sharp eyelash detail, high-frequency facial detail, studio strobe lighting, no post-processing blur, 8k UHD resolution, photorealistic";
+
     let prompt = "";
     if (style === "corporate") {
-      prompt = "An extremely sharp in-focus professional passport photo of a person, 97% exact face match, razor sharp eye details, clean shaven face, solid white background, even studio lighting, looking directly at the camera, wearing dark professional business suit attire, 8k resolution, photorealistic studio portrait";
+      prompt = `A professional Korean passport ID photo of a person, ${sharpCore}, solid pure white background, front-facing neutral expression, wearing dark professional business suit, shoulders visible and level`;
     } else if (style === "studio") {
-      prompt = "An extremely sharp in-focus professional studio passport photo of a person, 97% exact face match, razor sharp eye details, clean shaven face, solid neutral light gray background, even studio lighting, looking directly at the camera, 8k resolution, photorealistic";
+      prompt = `A professional Korean passport ID photo of a person, ${sharpCore}, solid pure white background, front-facing neutral expression, even studio lighting, shoulders visible and level`;
     } else if (style === "outdoor") {
-      prompt = "An extremely sharp in-focus professional portrait photo of a person, 97% exact face match, razor sharp eye details, clean shaven face, natural lighting, looking directly at the camera, professional smart casual attire, 8k resolution, photorealistic";
+      prompt = `A professional portrait photo of a person, ${sharpCore}, natural soft lighting, front-facing, professional smart casual attire, shoulders visible and level`;
     } else {
-      prompt = "An extremely sharp in-focus professional passport photo of a person, 97% exact face match, razor sharp eye details, clean shaven face, solid white background, even studio lighting, looking directly at the camera, 8k resolution, photorealistic";
+      prompt = `A professional Korean passport ID photo of a person, ${sharpCore}, solid pure white background, front-facing neutral expression, even studio lighting, shoulders visible and level`;
     }
 
-    // Call fal.subscribe for fal-ai/flux-pulid with 97% identity fidelity and sharp focus
+    // Call fal.subscribe for fal-ai/flux-pulid
+    // - num_inference_steps 30: more denoising = crisper detail
+    // - guidance_scale 3.5: stronger prompt adherence for sharpness
+    // - true_cfg 2.0: classifier-free guidance for extra sharpness
+    // - id_weight 0.97: near-identical face preservation
     const result = await fal.subscribe("fal-ai/flux-pulid", {
       input: {
         prompt,
         reference_image_url,
         image_size: "portrait_4_3",
-        num_inference_steps: 24,
-        guidance_scale: 1.8,
+        num_inference_steps: 30,
+        guidance_scale: 3.5,
+        true_cfg: 2.0,
         id_weight: 0.97,
-        negative_prompt: "blurry, out of focus, unfocused, soft focus, bokeh, depth of field blur, haze, mist, fuzzy, gaussian blur, low resolution, noise, distortion, watermark, text, bad anatomy"
+        negative_prompt: "blurry, out of focus, unfocused, soft focus, bokeh, depth of field, gaussian blur, motion blur, lens blur, haze, foggy, fuzzy, low resolution, low quality, noise, grain, jpeg artifacts, compression artifacts, watermark, text, bad anatomy, deformed, disfigured, extra limbs"
       }
     }) as { data?: { images?: Array<{ url: string }> } };
 
