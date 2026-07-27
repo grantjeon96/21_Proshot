@@ -56,36 +56,35 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Map style to an English prompt – emphasise tack-sharp focus for passport use
+    // Map style to an English prompt – natural matte skin, soft diffused studio lighting, zero oily shine
     const sharpCore =
-      "tack-sharp in-focus, 97% exact face preservation, crisp skin texture, sharp iris detail, sharp eyelash detail, high-frequency facial detail, studio strobe lighting, no post-processing blur, 8k UHD resolution, photorealistic";
+      "authentic studio passport photograph, natural matte skin, zero oily shine, soft diffused softbox lighting, realistic skin pores, even natural illumination across face, crisp eye detail, 8k resolution portrait";
 
     let prompt = "";
     if (style === "corporate") {
-      prompt = `A professional Korean passport ID photo of a person, ${sharpCore}, solid pure white background, front-facing neutral expression, wearing dark professional business suit, shoulders visible and level`;
+      prompt = `A realistic Korean passport ID photograph of a person, ${sharpCore}, solid pure white background, front-facing neutral expression, wearing dark professional business suit with tie, shoulders visible and level`;
     } else if (style === "studio") {
-      prompt = `A professional Korean passport ID photo of a person, ${sharpCore}, solid pure white background, front-facing neutral expression, even studio lighting, shoulders visible and level`;
+      prompt = `A realistic Korean passport ID photograph of a person, ${sharpCore}, solid pure white background, front-facing neutral expression, soft studio lighting, shoulders visible and level`;
     } else if (style === "outdoor") {
-      prompt = `A professional portrait photo of a person, ${sharpCore}, natural soft lighting, front-facing, professional smart casual attire, shoulders visible and level`;
+      prompt = `A realistic portrait photograph of a person, ${sharpCore}, natural soft daylight, front-facing, professional smart casual attire, shoulders visible and level`;
     } else {
-      prompt = `A professional Korean passport ID photo of a person, ${sharpCore}, solid pure white background, front-facing neutral expression, even studio lighting, shoulders visible and level`;
+      prompt = `A realistic Korean passport ID photograph of a person, ${sharpCore}, solid pure white background, front-facing neutral expression, soft studio lighting, shoulders visible and level`;
     }
 
     // Call fal.subscribe for fal-ai/flux-pulid
-    // - num_inference_steps 35: extra denoising passes for razor-sharp studio quality
-    // - guidance_scale 3.5: strong prompt adherence
-    // - true_cfg 2.0: classifier-free guidance for sharp edges
-    // - id_weight 0.85: high identity preservation while eliminating camera lens blur from original selfie
+    // - guidance_scale 2.5: eliminates artificial 3D plastic look & specular glare
+    // - true_cfg 1.2: natural shadow gradients on skin
+    // - id_weight 0.80: balanced identity match with authentic skin texture
     const result = await fal.subscribe("fal-ai/flux-pulid", {
       input: {
         prompt,
         reference_image_url,
         image_size: "portrait_4_3",
         num_inference_steps: 35,
-        guidance_scale: 3.5,
-        true_cfg: 2.0,
-        id_weight: 0.85,
-        negative_prompt: "blurry, out of focus, unfocused, soft focus, bokeh, depth of field, gaussian blur, motion blur, lens blur, haze, foggy, fuzzy, low resolution, low quality, noise, grain, jpeg artifacts, compression artifacts, watermark, text, bad anatomy, deformed, disfigured, extra limbs"
+        guidance_scale: 2.5,
+        true_cfg: 1.2,
+        id_weight: 0.80,
+        negative_prompt: "oily skin, shiny skin, specular glare, forehead shine, oily forehead, plastic skin, cgi, 3d render, artificial lighting, harsh reflections, glossy skin, oversaturated, blurry, out of focus, unfocused, soft focus, bokeh, depth of field, gaussian blur, distortion, watermark, text, bad anatomy, deformed"
       }
     }) as { data?: { images?: Array<{ url: string }> } };
 
