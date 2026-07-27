@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, ChangeEvent, DragEvent, useEffect, useCallback } from "react";
 import { loadTossPayments, ANONYMOUS } from "@tosspayments/tosspayments-sdk";
+import RefundModal from "./RefundModal";
 
 export type StyleType = "corporate" | "studio" | "outdoor";
 
@@ -40,6 +41,7 @@ export default function UploadCard() {
   // Payment modal state (downloads require payment)
   const [isPaid, setIsPaid] = useState<boolean>(false);
   const [showPaymentModal, setShowPaymentModal] = useState<boolean>(false);
+  const [showRefundModal, setShowRefundModal] = useState<boolean>(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState<boolean>(false);
 
   // Toast notifications
@@ -506,12 +508,20 @@ export default function UploadCard() {
                 </button>
               </div>
 
-              <button
-                onClick={handleFullReset}
-                className="text-[11px] font-medium text-slate-400 hover:text-slate-600 transition-colors py-1 text-center"
-              >
-                새로운 사진으로 시작하기 →
-              </button>
+              <div className="flex items-center justify-between pt-2">
+                <button
+                  onClick={() => setShowRefundModal(true)}
+                  className="text-[11px] font-semibold text-indigo-600 hover:underline transition-all flex items-center gap-1"
+                >
+                  <span>🛡️ 규격 미승인 100% 환불 신청</span>
+                </button>
+                <button
+                  onClick={handleFullReset}
+                  className="text-[11px] font-medium text-slate-400 hover:text-slate-600 transition-colors py-1"
+                >
+                  새로운 사진으로 시작하기 →
+                </button>
+              </div>
             </div>
           </div>
         ) : (
@@ -773,6 +783,8 @@ export default function UploadCard() {
           </div>
         </div>
       )}
+      {/* ═══ 100% Refund Request Modal ═══ */}
+      <RefundModal isOpen={showRefundModal} onClose={() => setShowRefundModal(false)} />
     </div>
   );
 }

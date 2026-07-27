@@ -2,6 +2,7 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import RefundModal from "../components/RefundModal";
 
 function SuccessContent() {
   const searchParams = useSearchParams();
@@ -11,6 +12,7 @@ function SuccessContent() {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [orderIdVal, setOrderIdVal] = useState<string>("");
   const [isDownloading, setIsDownloading] = useState(false);
+  const [showRefundModal, setShowRefundModal] = useState(false);
 
   useEffect(() => {
     const paymentKey = searchParams.get("paymentKey");
@@ -150,9 +152,23 @@ function SuccessContent() {
 
             {/* Refund & Guarantee Info */}
             <div className="mt-6 pt-4 border-t border-slate-100 text-left text-[11px] text-slate-400 space-y-1">
-              <p>• 주문번호: <span className="font-mono text-slate-600">{orderIdVal || "주문완료"}</span></p>
-              <p>• 민원센터에서 여권사진 규격 미승인 시 100% 전액 환불 보장됩니다.</p>
+              <p>• 주문번호: <span className="font-mono text-slate-600 font-bold">{orderIdVal || "주문완료"}</span></p>
+              <div className="flex items-center justify-between pt-1">
+                <span>• 규격 미승인 시 100% 전액 환불 보장</span>
+                <button
+                  onClick={() => setShowRefundModal(true)}
+                  className="font-bold text-indigo-600 hover:underline"
+                >
+                  환불 신청 →
+                </button>
+              </div>
             </div>
+
+            <RefundModal
+              isOpen={showRefundModal}
+              onClose={() => setShowRefundModal(false)}
+              defaultOrderId={orderIdVal}
+            />
           </div>
         )}
 
