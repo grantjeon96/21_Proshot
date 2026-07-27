@@ -59,24 +59,24 @@ export async function POST(req: NextRequest) {
     // Map style to an English prompt (corporate/studio/outdoor professional headshot)
     let prompt = "";
     if (style === "corporate") {
-      prompt = "An extremely pin-sharp in-focus professional passport photo of a person, 95% exact face match, crystal clear sharp eye details, clean shaven face, solid white background, even studio lighting, looking directly at the camera, wearing dark professional business suit attire, 8k resolution, photorealistic studio portrait";
+      prompt = "An extremely sharp in-focus professional passport photo of a person, 97% exact face match, razor sharp eye details, clean shaven face, solid white background, even studio lighting, looking directly at the camera, wearing dark professional business suit attire, 8k resolution, photorealistic studio portrait";
     } else if (style === "studio") {
-      prompt = "An extremely pin-sharp in-focus professional studio passport photo of a person, 95% exact face match, crystal clear sharp eye details, clean shaven face, solid neutral light gray background, even studio lighting, looking directly at the camera, 8k resolution, photorealistic";
+      prompt = "An extremely sharp in-focus professional studio passport photo of a person, 97% exact face match, razor sharp eye details, clean shaven face, solid neutral light gray background, even studio lighting, looking directly at the camera, 8k resolution, photorealistic";
     } else if (style === "outdoor") {
-      prompt = "An extremely pin-sharp in-focus professional portrait photo of a person, 95% exact face match, crystal clear sharp eye details, clean shaven face, natural lighting, looking directly at the camera, professional smart casual attire, 8k resolution, photorealistic";
+      prompt = "An extremely sharp in-focus professional portrait photo of a person, 97% exact face match, razor sharp eye details, clean shaven face, natural lighting, looking directly at the camera, professional smart casual attire, 8k resolution, photorealistic";
     } else {
-      prompt = "An extremely pin-sharp in-focus professional passport photo of a person, 95% exact face match, crystal clear sharp eye details, clean shaven face, solid white background, even studio lighting, looking directly at the camera, 8k resolution, photorealistic";
+      prompt = "An extremely sharp in-focus professional passport photo of a person, 97% exact face match, razor sharp eye details, clean shaven face, solid white background, even studio lighting, looking directly at the camera, 8k resolution, photorealistic";
     }
 
-    // Call fal.subscribe for fal-ai/flux-pulid with 95% identity fidelity and pin-sharp focus
+    // Call fal.subscribe for fal-ai/flux-pulid with 97% identity fidelity and sharp focus
     const result = await fal.subscribe("fal-ai/flux-pulid", {
       input: {
         prompt,
         reference_image_url,
         image_size: "portrait_4_3",
-        num_inference_steps: 28,
-        guidance_scale: 2.5,
-        id_weight: 0.95,
+        num_inference_steps: 24,
+        guidance_scale: 1.8,
+        id_weight: 0.97,
         negative_prompt: "blurry, out of focus, unfocused, soft focus, bokeh, depth of field blur, haze, mist, fuzzy, gaussian blur, low resolution, noise, distortion, watermark, text, bad anatomy"
       }
     }) as { data?: { images?: Array<{ url: string }> } };
