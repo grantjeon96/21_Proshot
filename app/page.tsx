@@ -95,22 +95,16 @@ export default function Home() {
             </a>
           </div>
 
-          {/* Simple Rating Badges */}
+          {/* Feature Guarantee Badges */}
           <div className="mt-10 flex flex-wrap items-center justify-center gap-6 text-sm text-slate-500 border-t border-slate-200/50 pt-8 w-full max-w-2xl">
             <div className="flex items-center gap-2">
-              <div className="flex -space-x-2">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="h-7 w-7 rounded-full border-2 border-white bg-slate-200 flex items-center justify-center text-[8px] font-bold text-slate-600">
-                    U{i}
-                  </div>
-                ))}
-              </div>
-              <span>이미 <strong>12,400+명</strong>이 통과 완료</span>
+              <span className="flex h-2 w-2 rounded-full bg-emerald-500"></span>
+              <span>대한민국 외교부 여권사진 규격 가이드 <strong>100% 반영</strong></span>
             </div>
             <div className="h-4 w-px bg-slate-200 hidden md:block"></div>
             <div className="flex items-center gap-1.5">
-              <span className="flex text-amber-400">★★★★★</span>
-              <span>만족도 <strong>4.9/5</strong></span>
+              <span className="text-indigo-600 font-bold">✓</span>
+              <span>규격 미승인 시 <strong>100% 환불 보장</strong></span>
             </div>
           </div>
         </section>
@@ -406,7 +400,7 @@ export default function Home() {
             {[
               {
                 q: "정말 여권 발급 신청 시 통과가 되나요?",
-                a: "네, 맞습니다! ProShot은 어깨 수평도, 정수리-턱 길이 비율, 뒷배경 투명도(단색화), 눈썹 노출 여부 등 한국 정부 여권 규정을 반영하여 사진을 필터링 및 변환합니다. 지금까지 수천 개의 발급 케이스가 무사히 승인되었습니다.",
+                a: "네, 맞습니다! ProShot은 어깨 수평도, 정수리-턱 길이 비율, 뒷배경 흰색 단색화, 양귀 및 눈썹 노출 요구사항 등 대한민국 외교부 여권 표준 규격 가이드를 정밀하게 반영하여 사진을 보정 및 변환합니다.",
               },
               {
                 q: "어떤 각도와 표정으로 원본 사진을 촬영해야 하나요?",
