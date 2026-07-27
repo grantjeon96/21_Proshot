@@ -74,9 +74,8 @@ export async function POST(req: NextRequest) {
         prompt,
         reference_image_url,
         image_size: "portrait_4_3",
-        mode: "fidelity",
-        num_inference_steps: 30,
-        guidance_scale: 2.8,
+        num_inference_steps: 28,
+        guidance_scale: 2.5,
         id_weight: 0.95,
         negative_prompt: "blurry, out of focus, unfocused, soft focus, bokeh, depth of field blur, haze, mist, fuzzy, gaussian blur, low resolution, noise, distortion, watermark, text, bad anatomy"
       }
