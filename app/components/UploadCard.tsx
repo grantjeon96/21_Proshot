@@ -40,6 +40,8 @@ export default function UploadCard() {
   // Payment modal state (downloads require payment)
   const [isPaid, setIsPaid] = useState<boolean>(false);
   const [showPaymentModal, setShowPaymentModal] = useState<boolean>(false);
+  const [tossWidgetReady, setTossWidgetReady] = useState(false);
+  const tossWidgetsRef = useRef<ReturnType<Awaited<ReturnType<typeof loadTossPayments>>["widgets"]> | null>(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState<boolean>(false);
 
   // Toast notifications
@@ -287,21 +289,54 @@ export default function UploadCard() {
     }
   };
 
-  // ── Real Toss Payments Integration (SDK v2) ──
+  // ── Toss Payments Widget Integration (SDK v2 – uses test_gck_ key) ──
+  useEffect(() => {
+    if (!showPaymentModal) {
+      tossWidgetsRef.current = null;
+      setTossWidgetReady(false);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const tossPayments = await loadTossPayments(TOSS_CLIENT_KEY);
+        const widgets = tossPayments.widgets({ customerKey: ANONYMOUS });
+        await widgets.setAmount({ currency: "KRW", value: 4900 });
+        if (cancelled) return;
+        tossWidgetsRef.current = widgets;
+
+        // Wait a tick for DOM containers to mount
+        await new Promise((r) => setTimeout(r, 100));
+        if (cancelled) return;
+
+        await widgets.renderPaymentMethods({
+          selector: "#toss-payment-method",
+          variantKey: "DEFAULT",
+        });
+        await widgets.renderAgreement({
+          selector: "#toss-agreement",
+          variantKey: "AGREEMENT",
+        });
+        if (!cancelled) setTossWidgetReady(true);
+      } catch (err) {
+        console.error("Toss Widget init error:", err);
+        if (!cancelled) showToast("결제 위젯 초기화 실패");
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showPaymentModal]);
+
   const handleTossPayment = async () => {
+    if (!tossWidgetsRef.current) {
+      showToast("결제 위젯이 아직 준비되지 않았습니다. 잠시 후 다시 시도해 주세요.");
+      return;
+    }
     setIsProcessingPayment(true);
     try {
-      const tossPayments = await loadTossPayments(TOSS_CLIENT_KEY);
-      const payment = tossPayments.payment({ customerKey: ANONYMOUS });
       const orderId = `order_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
       const origin = window.location.origin;
-
-      await payment.requestPayment({
-        method: "CARD",
-        amount: {
-          currency: "KRW",
-          value: 4900,
-        },
+      await tossWidgetsRef.current.requestPayment({
         orderId,
         orderName: "ProShot 고화질 여권사진 다운로드",
         successUrl: `${origin}/success`,
@@ -745,19 +780,28 @@ export default function UploadCard() {
               </ul>
             </div>
 
-            <div className="mt-6 flex flex-col gap-2">
+            {/* Toss Payment Widget containers */}
+            <div id="toss-payment-method" className="mt-4 w-full min-h-[200px]"></div>
+            <div id="toss-agreement" className="w-full"></div>
+
+            <div className="mt-4 flex flex-col gap-2">
               <button
                 onClick={handleTossPayment}
-                disabled={isProcessingPayment}
+                disabled={isProcessingPayment || !tossWidgetReady}
                 className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-indigo-600 py-3.5 text-center text-xs font-bold text-white hover:bg-indigo-500 active:scale-95 transition-all shadow-lg shadow-indigo-600/20 disabled:opacity-75"
               >
                 {isProcessingPayment ? (
                   <>
                     <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"></span>
-                    <span>토스페이먼츠 연동 중...</span>
+                    <span>결제 처리 중...</span>
+                  </>
+                ) : !tossWidgetReady ? (
+                  <>
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-indigo-300 border-t-white"></span>
+                    <span>결제 위젯 로딩 중...</span>
                   </>
                 ) : (
-                  <span>₩4,900 토스페이먼츠로 결제하기</span>
+                  <span>₩4,900 결제하기</span>
                 )}
               </button>
               <button
