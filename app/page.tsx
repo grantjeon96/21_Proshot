@@ -456,9 +456,6 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="border-t border-slate-200/60 bg-white/50 py-12 text-center text-xs text-slate-400">
-        <p className="mb-3 font-semibold text-slate-500">
-          ProShot — 온라인 여권사진 서비스
-        </p>
         <p>© 2026 ProShot. All rights reserved.</p>
       </footer>
     </div>
