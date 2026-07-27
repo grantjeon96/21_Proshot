@@ -6,11 +6,9 @@ export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
   try {
-    const clientFalKey = req.headers.get("x-fal-key");
-    
-    // Configure dynamically per request using client's key or env key
+    // Configure fal credentials using server-side environment key
     fal.config({
-      credentials: clientFalKey || process.env.FAL_KEY,
+      credentials: process.env.FAL_KEY,
     });
 
     const body = await req.json();

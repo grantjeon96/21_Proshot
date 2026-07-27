@@ -29,11 +29,14 @@ export default function UploadCard() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
 
-  // Free limit and BYOK states
+  // Free generation limit state (2 free generations)
   const [usesCount, setUsesCount] = useState<number>(0);
   const [showLimitModal, setShowLimitModal] = useState<boolean>(false);
-  const [byokKey, setByokKey] = useState<string>("");
-  const [inputByokKey, setInputByokKey] = useState<string>("");
+
+  // Payment modal state (downloads require payment)
+  const [isPaid, setIsPaid] = useState<boolean>(false);
+  const [showPaymentModal, setShowPaymentModal] = useState<boolean>(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState<boolean>(false);
 
   // Toast notifications
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -48,7 +51,6 @@ export default function UploadCard() {
   const showToast = useCallback((message: string, type: "error" | "success" = "error") => {
     const id = ++toastIdRef.current;
     setToasts((prev) => [...prev, { id, message, type }]);
-    // Auto-dismiss after 4 seconds
     setTimeout(() => {
       setToasts((prev) =>
         prev.map((t) => (t.id === id ? { ...t, leaving: true } : t))
@@ -77,10 +79,9 @@ export default function UploadCard() {
         localStorage.setItem("proshot_uses", "0");
       }
 
-      const byok = localStorage.getItem("proshot_byok");
-      if (byok) {
-        setByokKey(byok);
-        setInputByokKey(byok);
+      const paidStatus = localStorage.getItem("proshot_is_paid");
+      if (paidStatus === "true") {
+        setIsPaid(true);
       }
     }
   }, []);
@@ -120,13 +121,11 @@ export default function UploadCard() {
   ];
 
   const validateAndProcessFile = (file: File) => {
-    // Validate type
     if (!file.type.startsWith("image/")) {
       showToast("이미지 파일(PNG, JPG, JPEG 등)만 업로드할 수 있습니다.");
       return;
     }
 
-    // Validate size (8MB = 8 * 1024 * 1024 bytes)
     const maxSize = 8 * 1024 * 1024;
     if (file.size > maxSize) {
       showToast("파일 크기는 최대 8MB 이하여야 합니다.");
@@ -135,11 +134,9 @@ export default function UploadCard() {
 
     setSelectedFile(file);
 
-    // Create live preview thumbnail
     const objectUrl = URL.createObjectURL(file);
     setPreviewUrl(objectUrl);
 
-    // Read into base64 data URL
     const reader = new FileReader();
     reader.onloadend = () => {
       if (typeof reader.result === "string") {
@@ -194,12 +191,12 @@ export default function UploadCard() {
     fileInputRef.current?.click();
   };
 
-  // ── Generate Image API Request ──
+  // ── Generate Image API Request (2 free attempts) ──
   const handleGenerate = async () => {
     if (!base64Image) return;
 
-    // Check free limit before proceeding (unless BYOK is present)
-    if (!byokKey && usesCount >= 2) {
+    // Check free limit before proceeding
+    if (usesCount >= 2) {
       setShowLimitModal(true);
       return;
     }
@@ -208,18 +205,11 @@ export default function UploadCard() {
     setGeneratedImageUrl(null);
 
     try {
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-
-      // If client-side BYOK is present, send in the x-fal-key header
-      if (byokKey) {
-        headers["x-fal-key"] = byokKey;
-      }
-
       const response = await fetch("/api/generate", {
         method: "POST",
-        headers,
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           imageBase64: base64Image,
           style: selectedStyle,
@@ -233,25 +223,33 @@ export default function UploadCard() {
       }
 
       setGeneratedImageUrl(data.imageUrl);
-      showToast("AI 여권사진이 성공적으로 생성되었습니다!", "success");
+      showToast("여권사진이 성공적으로 생성되었습니다!", "success");
 
-      // Increment limit counter only if they did NOT use their own key
-      if (!byokKey) {
-        const newUses = usesCount + 1;
-        setUsesCount(newUses);
-        localStorage.setItem("proshot_uses", String(newUses));
-      }
+      const newUses = usesCount + 1;
+      setUsesCount(newUses);
+      localStorage.setItem("proshot_uses", String(newUses));
     } catch (err: unknown) {
       console.error(err);
-      const errMsg = err instanceof Error ? err.message : "AI 사진 생성 과정에서 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.";
+      const errMsg = err instanceof Error ? err.message : "사진 생성 과정에서 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.";
       showToast(errMsg);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // ── Download as PNG ──
-  const handleDownloadPng = async () => {
+  // ── Download Trigger (Requires Payment) ──
+  const handleDownloadClick = () => {
+    if (!generatedImageUrl) return;
+
+    if (!isPaid) {
+      // Prompt user to pay before download
+      setShowPaymentModal(true);
+    } else {
+      executeDownload();
+    }
+  };
+
+  const executeDownload = async () => {
     if (!generatedImageUrl) return;
     setIsDownloading(true);
     try {
@@ -260,59 +258,47 @@ export default function UploadCard() {
       const url = URL.createObjectURL(blobData);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "proshot-headshot.png";
+      a.download = "proshot-passport-photo.png";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      showToast("파일이 다운로드되었습니다.", "success");
+      showToast("고화질 여권사진이 다운로드되었습니다.", "success");
     } catch {
       showToast("다운로드 중 오류가 발생했습니다. 다시 시도해 주세요.");
-      // Fallback
       window.open(generatedImageUrl, "_blank");
     } finally {
       setIsDownloading(false);
     }
   };
 
-  // ── Re-generate with same style ──
+  // ── Simulating Payment ──
+  const handleSimulatePayment = () => {
+    setIsProcessingPayment(true);
+    setTimeout(() => {
+      setIsProcessingPayment(false);
+      setIsPaid(true);
+      localStorage.setItem("proshot_is_paid", "true");
+      setShowPaymentModal(false);
+      showToast("결제가 완료되었습니다! 고화질 파일 다운로드를 시작합니다.", "success");
+      executeDownload();
+    }, 1500);
+  };
+
   const handleRegenerate = () => {
     setGeneratedImageUrl(null);
     handleGenerate();
   };
 
-  // ── Change style (go back to style picker, keep uploaded image) ──
   const handleChangeStyle = () => {
     setGeneratedImageUrl(null);
   };
 
-  // ── Full reset ──
   const handleFullReset = () => {
     setGeneratedImageUrl(null);
     handleRemoveImage();
   };
 
-  // ── BYOK handlers ──
-  const handleSaveByok = () => {
-    const trimmed = inputByokKey.trim();
-    if (!trimmed) {
-      showToast("올바른 API 키를 입력해 주세요.");
-      return;
-    }
-    localStorage.setItem("proshot_byok", trimmed);
-    setByokKey(trimmed);
-    setShowLimitModal(false);
-    showToast("API 키가 저장되었습니다. 이제 무제한으로 생성할 수 있습니다!", "success");
-  };
-
-  const handleClearByok = () => {
-    localStorage.removeItem("proshot_byok");
-    setByokKey("");
-    setInputByokKey("");
-    showToast("API 키가 삭제되었습니다.", "success");
-  };
-
-  // ── Style label lookup ──
   const getStyleLabel = (style: StyleType): string => {
     const found = styleOptions.find((o) => o.value === style);
     return found ? found.label : style;
@@ -351,18 +337,15 @@ export default function UploadCard() {
       {/* ═══ Main Card ═══ */}
       <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xl shadow-slate-200/40 md:p-8 relative overflow-hidden">
 
-        {/* ═══ LOADING STATE — Skeleton + Spinner ═══ */}
+        {/* ═══ LOADING STATE ═══ */}
         {isLoading && (
           <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-white/95 backdrop-blur-sm animate-fade-in">
-            {/* Skeleton preview of Before/After */}
             <div className="w-full max-w-md px-6 mb-8">
               <div className="grid grid-cols-2 gap-4">
-                {/* Left skeleton card */}
                 <div className="rounded-2xl border border-slate-100 p-3">
                   <div className="aspect-[3/4] rounded-xl animate-shimmer"></div>
                   <div className="mt-3 h-3 w-16 rounded-full animate-shimmer"></div>
                 </div>
-                {/* Right skeleton card */}
                 <div className="rounded-2xl border border-slate-100 p-3">
                   <div className="aspect-[3/4] rounded-xl animate-shimmer"></div>
                   <div className="mt-3 h-3 w-20 rounded-full animate-shimmer"></div>
@@ -370,16 +353,15 @@ export default function UploadCard() {
               </div>
             </div>
 
-            {/* Spinner */}
             <div className="relative flex h-16 w-16 items-center justify-center">
               <span className="absolute h-14 w-14 animate-ping rounded-full bg-indigo-100 opacity-50"></span>
               <span className="relative flex h-9 w-9 animate-spin rounded-full border-[3px] border-indigo-200 border-t-indigo-600"></span>
             </div>
             <p className="mt-5 text-sm font-bold text-slate-800 animate-pulse">
-              AI가 여권사진을 만드는 중...
+              여권사진을 만드는 중...
             </p>
             <p className="mt-1.5 text-[11px] text-slate-400">
-              평균 15~30초 정도 소요됩니다
+              외교부 규격에 맞춰 정밀 보정하고 있습니다 (약 15초 소요)
             </p>
           </div>
         )}
@@ -387,21 +369,20 @@ export default function UploadCard() {
         {/* ═══ RESULT STATE — Before/After Comparison ═══ */}
         {generatedImageUrl ? (
           <div className="flex flex-col items-center animate-fade-in">
-            {/* Success badge */}
             <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 mb-3">
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="3" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
               </svg>
-              AI 여권사진 생성 완료!
+              여권사진 생성 완료!
             </span>
             <h3 className="text-lg font-bold text-slate-900 md:text-xl">당신의 완벽한 여권사진</h3>
             <p className="mt-1 text-[11px] text-slate-400 max-w-sm text-center">
               스타일: {getStyleLabel(selectedStyle)} · 원본과 비교해 보세요
             </p>
 
-            {/* ── Before / After Cards ── */}
+            {/* Before / After Cards */}
             <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-5 w-full max-w-lg animate-slide-up">
-              {/* Before — 원본 */}
+              {/* Before */}
               <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-2.5 sm:p-3 shadow-sm">
                 <div className="relative aspect-[3/4] w-full overflow-hidden rounded-xl border border-slate-200 bg-white">
                   {previewUrl && (
@@ -419,30 +400,44 @@ export default function UploadCard() {
                 </div>
               </div>
 
-              {/* After — AI 헤드샷 */}
+              {/* After */}
               <div className="rounded-2xl border border-indigo-100/80 bg-indigo-50/20 p-2.5 sm:p-3 shadow-sm shadow-indigo-100/30">
                 <div className="relative aspect-[3/4] w-full overflow-hidden rounded-xl border-2 border-indigo-100 bg-white">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={generatedImageUrl}
-                    alt="AI 생성 여권사진"
+                    alt="생성된 여권사진"
                     className="h-full w-full object-cover"
                   />
+                  {!isPaid && (
+                    <div className="absolute inset-0 bg-slate-900/10 backdrop-blur-[1px] flex items-center justify-center">
+                      <span className="bg-slate-900/80 text-white text-[10px] font-bold px-2.5 py-1 rounded-full backdrop-blur-md">
+                        🔒 다운로드 시 결제 필요
+                      </span>
+                    </div>
+                  )}
                 </div>
-                <div className="mt-2.5 flex items-center gap-1.5 px-1">
-                  <span className="h-1.5 w-1.5 rounded-full bg-indigo-500"></span>
-                  <span className="text-xs font-bold text-indigo-700">AI 헤드샷</span>
+                <div className="mt-2.5 flex items-center justify-between px-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="h-1.5 w-1.5 rounded-full bg-indigo-500"></span>
+                    <span className="text-xs font-bold text-indigo-700">여권사진 (완성)</span>
+                  </div>
+                  {isPaid && (
+                    <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded">
+                      결제완료
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* ── Action Buttons ── */}
+            {/* Action Buttons */}
             <div className="mt-8 flex flex-col gap-3 w-full max-w-lg animate-slide-up" style={{ animationDelay: "0.1s" }}>
-              {/* Primary: PNG 다운로드 */}
+              {/* Primary: PNG 다운로드 (결제 필요 시 모달 노출) */}
               <button
-                onClick={handleDownloadPng}
+                onClick={handleDownloadClick}
                 disabled={isDownloading}
-                className="group w-full inline-flex items-center justify-center gap-2.5 rounded-2xl bg-indigo-600 px-6 py-4 text-sm font-bold text-white shadow-lg shadow-indigo-600/10 transition-all duration-300 hover:bg-indigo-500 hover:shadow-indigo-500/20 active:scale-[0.98] disabled:opacity-60 disabled:cursor-wait"
+                className="group w-full inline-flex items-center justify-center gap-2.5 rounded-2xl bg-indigo-600 px-6 py-4 text-sm font-bold text-white shadow-lg shadow-indigo-600/10 transition-all duration-300 hover:bg-indigo-500 hover:shadow-indigo-500/20 active:scale-[0.98] disabled:opacity-60"
               >
                 {isDownloading ? (
                   <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"></span>
@@ -451,10 +446,10 @@ export default function UploadCard() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
                   </svg>
                 )}
-                <span>PNG 다운로드</span>
+                <span>{isPaid ? "PNG 고화질 다운로드" : "다운로드하기 (₩4,900)"}</span>
               </button>
 
-              {/* Secondary row: 다시 생성 + 스타일 바꾸기 */}
+              {/* Secondary row */}
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={handleRegenerate}
@@ -476,10 +471,9 @@ export default function UploadCard() {
                 </button>
               </div>
 
-              {/* Tertiary: new upload */}
               <button
                 onClick={handleFullReset}
-                className="text-[11px] font-medium text-slate-400 hover:text-slate-600 transition-colors py-1"
+                className="text-[11px] font-medium text-slate-400 hover:text-slate-600 transition-colors py-1 text-center"
               >
                 새로운 사진으로 시작하기 →
               </button>
@@ -495,37 +489,13 @@ export default function UploadCard() {
               </p>
             </div>
 
-            {/* Limit / BYOK Status indicators */}
-            {byokKey ? (
-              <div className="mb-6 flex items-center justify-between rounded-2xl bg-indigo-50/50 border border-indigo-100/50 px-4 py-3 text-xs">
-                <span className="text-indigo-700 font-semibold flex items-center gap-1.5">
-                  <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
-                  본인의 fal.ai API 키가 적용되어 있습니다 (무제한 무료생성 가능)
-                </span>
-                <button
-                  onClick={handleClearByok}
-                  className="text-[10px] text-slate-400 hover:text-rose-600 font-semibold underline transition-colors"
-                >
-                  키 삭제
-                </button>
-              </div>
-            ) : (
-              <div className="mb-6 flex items-center justify-between rounded-2xl bg-slate-50 border border-slate-200/50 px-4 py-3 text-xs">
-                <span className="text-slate-600 font-medium">
-                  무료 체험 남은 횟수: <strong className="text-indigo-600">{Math.max(0, 2 - usesCount)}회</strong> / 2회
-                </span>
-                {usesCount >= 2 ? (
-                  <button
-                    onClick={() => setShowLimitModal(true)}
-                    className="text-[10px] text-indigo-600 hover:text-indigo-500 font-bold underline transition-colors"
-                  >
-                    API 키 등록하기
-                  </button>
-                ) : (
-                  <span className="text-[10px] text-slate-400">초과 시 본인 API 키 입력 필요</span>
-                )}
-              </div>
-            )}
+            {/* Free Limit Counter Indicator */}
+            <div className="mb-6 flex items-center justify-between rounded-2xl bg-slate-50 border border-slate-200/50 px-4 py-3 text-xs">
+              <span className="text-slate-600 font-medium">
+                무료 생성 남은 횟수: <strong className="text-indigo-600">{Math.max(0, 2 - usesCount)}회</strong> / 2회
+              </span>
+              <span className="text-[10px] text-slate-400">다운로드 시 결제 필요</span>
+            </div>
 
             {/* File Upload Zone */}
             <div className="mb-6">
@@ -609,7 +579,6 @@ export default function UploadCard() {
                           : "border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50/20"
                       }`}
                     >
-                      {/* Checkmark icon for selected card */}
                       {isSelected && (
                         <span className="absolute top-3.5 right-3.5 flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-white text-[10px]">
                           ✓
@@ -645,7 +614,7 @@ export default function UploadCard() {
                     : "bg-slate-200 cursor-not-allowed text-slate-400"
                 }`}
               >
-                <span>헤드샷 생성</span>
+                <span>여권사진 생성하기</span>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
@@ -662,11 +631,10 @@ export default function UploadCard() {
         )}
       </div>
 
-      {/* ═══ Free limit modal ("무료 체험 2회를 모두 사용했어요") ═══ */}
+      {/* ═══ Free Limit Reached Modal (2 uses exceeded) ═══ */}
       {showLimitModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
           <div className="relative w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl border border-slate-100 animate-scale-in text-center">
-            {/* Close button */}
             <button
               onClick={() => setShowLimitModal(false)}
               className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors"
@@ -676,58 +644,94 @@ export default function UploadCard() {
               </svg>
             </button>
 
-            {/* Modal Icon */}
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-rose-50 text-rose-500">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-indigo-50 text-indigo-600">
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
 
-            <h3 className="text-lg font-bold text-slate-900">무료 체험 2회를 모두 사용했어요</h3>
+            <h3 className="text-lg font-bold text-slate-900">무료 체험 2회를 모두 사용하셨습니다</h3>
             <p className="mt-2 text-xs text-slate-500 leading-relaxed px-2">
-              ProShot의 무료 생성 기회(2회)를 모두 소진하셨습니다. 아래 두 옵션 중 하나를 선택해 보세요.
+              ProShot의 무료 생성 기회(2회)를 모두 사용하셨습니다. 추가 생성을 이용하시려면 정식 버전을 이용해 주세요.
             </p>
 
-            {/* Option A (BYOK) */}
-            <div className="mt-5 border border-slate-200/80 rounded-2xl p-4 bg-slate-50/50 text-left">
-              <h4 className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-indigo-500"></span>
-                옵션 A: 본인의 fal.ai API 키 사용 (BYOK)
-              </h4>
-              <p className="mt-1 text-[10px] text-slate-400">
-                fal.ai에 가입하여 발급받은 개인 API 키를 입력해 무료 제한 없이 사용해 보세요.
-              </p>
-              <div className="mt-3 flex gap-2">
-                <input
-                  type="password"
-                  placeholder="fal.ai API Key 입력 (FAL_KEY)"
-                  value={inputByokKey}
-                  onChange={(e) => setInputByokKey(e.target.value)}
-                  className="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white text-slate-800"
-                />
-                <button
-                  onClick={handleSaveByok}
-                  className="shrink-0 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-500 active:scale-95 transition-all"
-                >
-                  저장
-                </button>
-              </div>
-              <p className="mt-2.5 text-[9px] text-slate-400 leading-normal">
-                ※ 입력하신 API 키는 브라우저의 localStorage에만 안전하게 저장되며, 절대 저희 서버에 수집되거나 기록되지 않습니다. 오직 귀하의 이미지 생성 요청을 AI 엔진으로 전송하는 용도로만 사용됩니다.
-              </p>
+            <div className="mt-6">
+              <button
+                onClick={() => {
+                  setShowLimitModal(false);
+                  setShowPaymentModal(true);
+                }}
+                className="w-full rounded-2xl bg-indigo-600 py-3.5 text-center text-xs font-bold text-white hover:bg-indigo-500 active:scale-95 transition-all shadow-md"
+              >
+                정식 이용권 결제하기 (₩4,900)
+              </button>
+              <button
+                onClick={() => setShowLimitModal(false)}
+                className="mt-2.5 w-full rounded-2xl border border-slate-200 py-3 text-center text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-all"
+              >
+                닫기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ Payment Required Modal (For Downloading) ═══ */}
+      {showPaymentModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="relative w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl border border-slate-100 animate-scale-in text-center">
+            <button
+              onClick={() => setShowPaymentModal(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-indigo-50 text-indigo-600">
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+              </svg>
             </div>
 
-            {/* Option B */}
-            <div className="mt-4 text-left">
-              <h4 className="text-xs font-bold text-slate-700 flex items-center gap-1.5 mb-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-slate-400"></span>
-                옵션 B: 정식 버전 이용
-              </h4>
+            <h3 className="text-lg font-bold text-slate-900">고화질 여권사진 다운로드</h3>
+            <p className="mt-2 text-xs text-slate-500 leading-relaxed px-2">
+              외교부 공식 규격(3.5x4.5cm) 300 DPI 초고화질 인화용 및 온라인 여권 신청용 파일 다운로드는 결제 후 이용 가능합니다.
+            </p>
+
+            <div className="mt-5 rounded-2xl bg-indigo-50/50 border border-indigo-100 p-4 text-left">
+              <div className="flex justify-between items-center text-xs font-bold text-slate-800">
+                <span>ProShot 여권사진 인화용 패키지</span>
+                <span className="text-indigo-600 text-base">₩4,900</span>
+              </div>
+              <ul className="mt-2 space-y-1 text-[11px] text-slate-500">
+                <li>✓ 외교부 규격 비율 자동 준수</li>
+                <li>✓ 300 DPI 초고화질 PNG 다운로드</li>
+                <li>✓ 민원센터 규격 미승인 시 100% 환불 보장</li>
+              </ul>
+            </div>
+
+            <div className="mt-6 flex flex-col gap-2">
               <button
-                disabled
-                className="w-full rounded-xl bg-slate-200 py-3.5 text-center text-xs font-bold text-slate-400 cursor-not-allowed border border-slate-300/40"
+                onClick={handleSimulatePayment}
+                disabled={isProcessingPayment}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-indigo-600 py-3.5 text-center text-xs font-bold text-white hover:bg-indigo-500 active:scale-95 transition-all shadow-lg shadow-indigo-600/20 disabled:opacity-75"
               >
-                정식 버전 준비 중 (결제 시스템 구축 예정)
+                {isProcessingPayment ? (
+                  <>
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"></span>
+                    <span>결제 처리 중...</span>
+                  </>
+                ) : (
+                  <span>₩4,900 결제하고 지금 다운로드하기</span>
+                )}
+              </button>
+              <button
+                onClick={() => setShowPaymentModal(false)}
+                className="w-full rounded-2xl border border-slate-200 py-3 text-center text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-all"
+              >
+                나중에 하기
               </button>
             </div>
           </div>
