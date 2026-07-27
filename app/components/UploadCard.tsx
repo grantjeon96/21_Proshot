@@ -442,8 +442,8 @@ export default function UploadCard() {
                     className="h-full w-full object-cover"
                   />
                   {!isPaid && (
-                    <div className="absolute inset-0 bg-slate-900/10 backdrop-blur-[1px] flex items-center justify-center">
-                      <span className="bg-slate-900/80 text-white text-[10px] font-bold px-2.5 py-1 rounded-full backdrop-blur-md">
+                    <div className="absolute inset-0 bg-slate-900/5 flex items-center justify-center pointer-events-none">
+                      <span className="bg-slate-900/80 text-white text-[10px] font-bold px-3 py-1.5 rounded-full shadow-lg border border-white/20">
                         🔒 다운로드 시 결제 필요
                       </span>
                     </div>

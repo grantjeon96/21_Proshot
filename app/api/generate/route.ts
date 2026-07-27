@@ -72,19 +72,19 @@ export async function POST(req: NextRequest) {
     }
 
     // Call fal.subscribe for fal-ai/flux-pulid
-    // - num_inference_steps 30: more denoising = crisper detail
-    // - guidance_scale 3.5: stronger prompt adherence for sharpness
-    // - true_cfg 2.0: classifier-free guidance for extra sharpness
-    // - id_weight 0.97: near-identical face preservation
+    // - num_inference_steps 35: extra denoising passes for razor-sharp studio quality
+    // - guidance_scale 3.5: strong prompt adherence
+    // - true_cfg 2.0: classifier-free guidance for sharp edges
+    // - id_weight 0.85: high identity preservation while eliminating camera lens blur from original selfie
     const result = await fal.subscribe("fal-ai/flux-pulid", {
       input: {
         prompt,
         reference_image_url,
         image_size: "portrait_4_3",
-        num_inference_steps: 30,
+        num_inference_steps: 35,
         guidance_scale: 3.5,
         true_cfg: 2.0,
-        id_weight: 0.97,
+        id_weight: 0.85,
         negative_prompt: "blurry, out of focus, unfocused, soft focus, bokeh, depth of field, gaussian blur, motion blur, lens blur, haze, foggy, fuzzy, low resolution, low quality, noise, grain, jpeg artifacts, compression artifacts, watermark, text, bad anatomy, deformed, disfigured, extra limbs"
       }
     }) as { data?: { images?: Array<{ url: string }> } };
