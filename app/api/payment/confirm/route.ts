@@ -13,8 +13,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Toss Payments Secret Key (Official docs test secret key)
-    const secretKey = "test_gsk_docs_OaPz8L5KdmQXkzRz3y47BMw6";
+    // Toss Payments Secret Key (Reads from .env.local TOSS_SECRET_KEY first)
+    const secretKey = process.env.TOSS_SECRET_KEY || "test_gsk_docs_OaPz8L5KdmQXkzRz3y47BMw6";
     const basicToken = Buffer.from(`${secretKey}:`).toString("base64");
 
     const response = await fetch("https://api.tosspayments.com/v1/payments/confirm", {
