@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, ChangeEvent, DragEvent, useEffect, useCallback } from "react";
-import { loadTossPayments } from "@tosspayments/payment-sdk";
+import { loadTossPayments, ANONYMOUS } from "@tosspayments/tosspayments-sdk";
 
 export type StyleType = "corporate" | "studio" | "outdoor";
 
@@ -19,8 +19,8 @@ interface Toast {
   leaving?: boolean;
 }
 
-// Toss Payments Client Key (Official test client key)
-const TOSS_CLIENT_KEY = "test_ck_docs_Ovk5rk1Erg2AMy4G1Awowo9Za823";
+// Toss Payments Client Key (Official docs test client key)
+const TOSS_CLIENT_KEY = "test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm";
 
 export default function UploadCard() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -287,16 +287,21 @@ export default function UploadCard() {
     }
   };
 
-  // ── Real Toss Payments Integration ──
+  // ── Real Toss Payments Integration (SDK v2) ──
   const handleTossPayment = async () => {
     setIsProcessingPayment(true);
     try {
       const tossPayments = await loadTossPayments(TOSS_CLIENT_KEY);
+      const payment = tossPayments.payment({ customerKey: ANONYMOUS });
       const orderId = `order_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
       const origin = window.location.origin;
 
-      await tossPayments.requestPayment("카드", {
-        amount: 4900,
+      await payment.requestPayment({
+        method: "CARD",
+        amount: {
+          currency: "KRW",
+          value: 4900,
+        },
         orderId,
         orderName: "ProShot 고화질 여권사진 다운로드",
         successUrl: `${origin}/success`,
