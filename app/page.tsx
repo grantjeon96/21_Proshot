@@ -73,9 +73,9 @@ export default function Home() {
           <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center items-center w-full max-w-md">
             <a
               href="#upload"
-              className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-8 py-4 text-base font-semibold text-white shadow-xl shadow-indigo-600/10 transition-all duration-300 hover:bg-indigo-50 hover:shadow-indigo-500/20 active:scale-[0.98]"
+              className="group w-full sm:w-auto inline-flex items-center justify-center gap-2.5 rounded-2xl bg-indigo-600 px-8 py-4.5 text-base font-bold text-white shadow-xl shadow-indigo-600/25 transition-all duration-300 hover:bg-indigo-500 hover:shadow-indigo-500/35 hover:-translate-y-0.5 active:scale-[0.98]"
             >
-              <span>내 여권사진 만들기</span>
+              <span>여권사진 만들기 (무료 2회)</span>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
@@ -89,7 +89,7 @@ export default function Home() {
             </a>
             <a
               href="#showcase"
-              className="w-full sm:w-auto inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-8 py-4 text-base font-semibold text-slate-700 transition-all duration-300 hover:bg-slate-50 hover:border-slate-300"
+              className="w-full sm:w-auto inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-8 py-4.5 text-base font-semibold text-slate-700 transition-all duration-300 hover:bg-slate-50 hover:border-slate-300"
             >
               샘플 보기
             </a>
