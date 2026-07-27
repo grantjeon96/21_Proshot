@@ -155,6 +155,12 @@ export default function UploadCard() {
   ];
 
   const validateAndProcessFile = (file: File) => {
+    const fileName = file.name.toLowerCase();
+    if (fileName.endsWith(".heic") || fileName.endsWith(".heif") || file.type.includes("heic") || file.type.includes("heif")) {
+      showToast("아이폰 HEIC 파일은 AI 변환이 어렵습니다. JPG 또는 PNG 사진으로 업로드해 주세요!", "error");
+      return;
+    }
+
     if (!file.type.startsWith("image/")) {
       showToast("이미지 파일(PNG, JPG, JPEG 등)만 업로드할 수 있습니다.");
       return;

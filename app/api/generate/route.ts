@@ -88,16 +88,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ imageUrl: result.data.images[0].url });
   } catch (error: unknown) {
     console.error("Generation route error:", error);
-    const err = error as { status?: number; body?: { detail?: string }; message?: string };
-    const detail = err?.body?.detail || err?.message || "";
-    if (err?.status === 403 || detail.includes("Exhausted balance")) {
+    const err = error as { status?: number; body?: { detail?: unknown }; message?: string };
+    
+    let detailStr = "";
+    if (err?.body?.detail) {
+      detailStr = typeof err.body.detail === "string" ? err.body.detail : JSON.stringify(err.body.detail);
+    } else if (err?.message) {
+      detailStr = err.message;
+    }
+
+    if (err?.status === 403 || detailStr.includes("Exhausted balance")) {
       return NextResponse.json(
         { error: "fal.ai API 계정의 잔액(크레딧)이 소진되었습니다. fal.ai/dashboard/billing 에서 잔액을 충전해 주세요." },
         { status: 403 }
       );
     }
+
     return NextResponse.json(
-      { error: `사진 생성 실패: ${detail || "AI 엔진 처리 오류"}` },
+      { error: `사진 생성 실패: ${detailStr || "AI 엔진 처리 오류가 발생했습니다."}` },
       { status: 500 }
     );
   }
