@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, ChangeEvent, DragEvent, useEffect, useCallback } from "react";
+import { loadTossPayments } from "@tosspayments/payment-sdk";
 
 export type StyleType = "corporate" | "studio" | "outdoor";
 
@@ -17,6 +18,9 @@ interface Toast {
   type: "error" | "success";
   leaving?: boolean;
 }
+
+// Toss Payments Client Key (Official test client key)
+const TOSS_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY || "test_ck_D56448M58ndAgg0E45rg3Lxoy15M";
 
 export default function UploadCard() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -70,6 +74,29 @@ export default function UploadCard() {
     }, 300);
   }, []);
 
+  const executeDownload = useCallback(async () => {
+    if (!generatedImageUrl) return;
+    setIsDownloading(true);
+    try {
+      const res = await fetch(generatedImageUrl);
+      const blobData = await res.blob();
+      const url = URL.createObjectURL(blobData);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "proshot-passport-photo.png";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast("고화질 여권사진이 다운로드되었습니다.", "success");
+    } catch {
+      showToast("다운로드 중 오류가 발생했습니다. 다시 시도해 주세요.");
+      window.open(generatedImageUrl, "_blank");
+    } finally {
+      setIsDownloading(false);
+    }
+  }, [generatedImageUrl, showToast]);
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       const uses = localStorage.getItem("proshot_uses");
@@ -85,6 +112,13 @@ export default function UploadCard() {
       }
     }
   }, []);
+
+  // Trigger auto-download if redirected back after payment
+  useEffect(() => {
+    if (isPaid && generatedImageUrl) {
+      executeDownload();
+    }
+  }, [isPaid, generatedImageUrl, executeDownload]);
 
   const styleOptions: StyleOption[] = [
     {
@@ -195,7 +229,6 @@ export default function UploadCard() {
   const handleGenerate = async () => {
     if (!base64Image) return;
 
-    // Check free limit before proceeding
     if (usesCount >= 2) {
       setShowLimitModal(true);
       return;
@@ -242,47 +275,35 @@ export default function UploadCard() {
     if (!generatedImageUrl) return;
 
     if (!isPaid) {
-      // Prompt user to pay before download
       setShowPaymentModal(true);
     } else {
       executeDownload();
     }
   };
 
-  const executeDownload = async () => {
-    if (!generatedImageUrl) return;
-    setIsDownloading(true);
-    try {
-      const res = await fetch(generatedImageUrl);
-      const blobData = await res.blob();
-      const url = URL.createObjectURL(blobData);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "proshot-passport-photo.png";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      showToast("고화질 여권사진이 다운로드되었습니다.", "success");
-    } catch {
-      showToast("다운로드 중 오류가 발생했습니다. 다시 시도해 주세요.");
-      window.open(generatedImageUrl, "_blank");
-    } finally {
-      setIsDownloading(false);
-    }
-  };
-
-  // ── Simulating Payment ──
-  const handleSimulatePayment = () => {
+  // ── Real Toss Payments Integration ──
+  const handleTossPayment = async () => {
     setIsProcessingPayment(true);
-    setTimeout(() => {
+    try {
+      const tossPayments = await loadTossPayments(TOSS_CLIENT_KEY);
+      const orderId = `order_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      const origin = window.location.origin;
+
+      await tossPayments.requestPayment("카드", {
+        amount: 4900,
+        orderId,
+        orderName: "ProShot 고화질 여권사진 다운로드",
+        successUrl: `${origin}/success`,
+        failUrl: `${origin}/#upload`,
+      });
+    } catch (err: unknown) {
       setIsProcessingPayment(false);
-      setIsPaid(true);
-      localStorage.setItem("proshot_is_paid", "true");
-      setShowPaymentModal(false);
-      showToast("결제가 완료되었습니다! 고화질 파일 다운로드를 시작합니다.", "success");
-      executeDownload();
-    }, 1500);
+      console.error("Toss Payments Error:", err);
+      const msg = err instanceof Error ? err.message : "결제 창 호출 실패";
+      if (!msg.includes("취소")) {
+        showToast(msg);
+      }
+    }
   };
 
   const handleRegenerate = () => {
@@ -433,7 +454,7 @@ export default function UploadCard() {
 
             {/* Action Buttons */}
             <div className="mt-8 flex flex-col gap-3 w-full max-w-lg animate-slide-up" style={{ animationDelay: "0.1s" }}>
-              {/* Primary: PNG 다운로드 (결제 필요 시 모달 노출) */}
+              {/* Primary: PNG 다운로드 (결제 필요 시 토스페이먼츠 연동 모달) */}
               <button
                 onClick={handleDownloadClick}
                 disabled={isDownloading}
@@ -631,7 +652,7 @@ export default function UploadCard() {
         )}
       </div>
 
-      {/* ═══ Free Limit Reached Modal (2 uses exceeded) ═══ */}
+      {/* ═══ Free Limit Reached Modal ═══ */}
       {showLimitModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
           <div className="relative w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl border border-slate-100 animate-scale-in text-center">
@@ -663,7 +684,7 @@ export default function UploadCard() {
                 }}
                 className="w-full rounded-2xl bg-indigo-600 py-3.5 text-center text-xs font-bold text-white hover:bg-indigo-500 active:scale-95 transition-all shadow-md"
               >
-                정식 이용권 결제하기 (₩4,900)
+                토스페이먼츠로 결제하기 (₩4,900)
               </button>
               <button
                 onClick={() => setShowLimitModal(false)}
@@ -676,7 +697,7 @@ export default function UploadCard() {
         </div>
       )}
 
-      {/* ═══ Payment Required Modal (For Downloading) ═══ */}
+      {/* ═══ Payment Required Modal (Real Toss Payments Integration) ═══ */}
       {showPaymentModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
           <div className="relative w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl border border-slate-100 animate-scale-in text-center">
@@ -709,22 +730,23 @@ export default function UploadCard() {
                 <li>✓ 외교부 규격 비율 자동 준수</li>
                 <li>✓ 300 DPI 초고화질 PNG 다운로드</li>
                 <li>✓ 민원센터 규격 미승인 시 100% 환불 보장</li>
+                <li>✓ 신용카드 / 카카오페이 / 토스페이 지원</li>
               </ul>
             </div>
 
             <div className="mt-6 flex flex-col gap-2">
               <button
-                onClick={handleSimulatePayment}
+                onClick={handleTossPayment}
                 disabled={isProcessingPayment}
                 className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-indigo-600 py-3.5 text-center text-xs font-bold text-white hover:bg-indigo-500 active:scale-95 transition-all shadow-lg shadow-indigo-600/20 disabled:opacity-75"
               >
                 {isProcessingPayment ? (
                   <>
                     <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"></span>
-                    <span>결제 처리 중...</span>
+                    <span>토스페이먼츠 연동 중...</span>
                   </>
                 ) : (
-                  <span>₩4,900 결제하고 지금 다운로드하기</span>
+                  <span>₩4,900 토스페이먼츠로 결제하기</span>
                 )}
               </button>
               <button
