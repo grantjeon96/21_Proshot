@@ -20,7 +20,7 @@ interface Toast {
 }
 
 // Toss Payments Client Key (Official test client key)
-const TOSS_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY || "test_ck_docs_Ovk5rk1Erg2AMy4G1Awowo9Za823";
+const TOSS_CLIENT_KEY = "test_ck_docs_Ovk5rk1Erg2AMy4G1Awowo9Za823";
 
 export default function UploadCard() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
