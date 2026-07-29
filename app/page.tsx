@@ -119,9 +119,9 @@ export default function Home() {
             <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
               지금 당신의 여권사진을 만드세요
             </h2>
-            <p className="mt-2 text-slate-500 text-sm md:text-base">
+            <div className="mt-2 text-slate-500 text-sm md:text-base">
               사진관에 가지 않고도, 3초 만에 완벽한 비율과 규격의 파일이 완성됩니다.
-            </p>
+            </div>
           </div>
           <UploadCard />
         </section>
@@ -132,9 +132,9 @@ export default function Home() {
             <h2 className="text-3xl font-bold tracking-tight text-slate-900">
               ProShot이 완성한 AI 여권사진
             </h2>
-            <p className="mt-3 text-slate-500 text-sm md:text-base">
+            <div className="mt-3 text-slate-500 text-sm md:text-base">
               과도한 보정 없이 외교부 여권 기준(흰색 배경, 그림자 없음, 정면 응시)을 충족하면서 본래의 매력을 자연스럽게 살려냅니다.
-            </p>
+            </div>
           </div>
 
           <div className="grid gap-8 md:grid-cols-3">
@@ -154,7 +154,7 @@ export default function Home() {
               <div className="mt-4 flex items-center justify-between">
                 <div>
                   <h3 className="font-semibold text-slate-800 text-sm">생성 샘플 01 (남성)</h3>
-                  <p className="text-xs text-slate-400 mt-0.5">정제된 수트 스타일</p>
+                  <div className="text-xs text-slate-400 mt-0.5">정제된 수트 스타일</div>
                 </div>
                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
                   <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth="3" stroke="currentColor">
@@ -181,7 +181,7 @@ export default function Home() {
               <div className="mt-4 flex items-center justify-between">
                 <div>
                   <h3 className="font-semibold text-slate-800 text-sm">생성 샘플 02 (여성)</h3>
-                  <p className="text-xs text-slate-400 mt-0.5">자연스럽고 또렷한 헤어라인</p>
+                  <div className="text-xs text-slate-400 mt-0.5">자연스럽고 또렷한 헤어라인</div>
                 </div>
                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
                   <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth="3" stroke="currentColor">
@@ -208,7 +208,7 @@ export default function Home() {
               <div className="mt-4 flex items-center justify-between">
                 <div>
                   <h3 className="font-semibold text-slate-800 text-sm">생성 샘플 03 (여성)</h3>
-                  <p className="text-xs text-slate-400 mt-0.5">밝고 부드러운 이미지</p>
+                  <div className="text-xs text-slate-400 mt-0.5">밝고 부드러운 이미지</div>
                 </div>
                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
                   <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth="3" stroke="currentColor">
@@ -232,9 +232,9 @@ export default function Home() {
                 스튜디오의 조명과 보정을 <br />
                 그대로 모바일 화면 안에 담았습니다
               </h2>
-              <p className="mt-4 text-slate-600 leading-relaxed">
+              <div className="mt-4 text-slate-600 leading-relaxed">
                 ProShot은 단순한 필터가 아닙니다. 외교부의 까다로운 8가지 주요 여권 규격 기준을 실시간으로 확인하고, 배경 크로마키와 대칭 조명 처리를 통해 단 3초 만에 완전한 규격 통과용 고화질 사진을 연출합니다.
-              </p>
+              </div>
 
               <div className="mt-8 space-y-4">
                 {[
@@ -257,7 +257,7 @@ export default function Home() {
                     </span>
                     <div>
                       <h4 className="font-semibold text-slate-800 text-sm">{item.title}</h4>
-                      <p className="text-xs text-slate-500 mt-0.5">{item.desc}</p>
+                      <div className="text-xs text-slate-500 mt-0.5">{item.desc}</div>
                     </div>
                   </div>
                 ))}
@@ -273,9 +273,9 @@ export default function Home() {
                   </svg>
                 </div>
                 <h3 className="font-bold text-slate-800 text-base">3초 만에 즉시 전송</h3>
-                <p className="mt-2 text-xs text-slate-500 leading-relaxed">
+                <div className="mt-2 text-xs text-slate-500 leading-relaxed">
                   스튜디오 예약 후 기다릴 필요 없이, 완성된 인화용 고화질 JPG 파일을 결제 즉시 다운로드 가능합니다.
-                </p>
+                </div>
               </div>
 
               <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
@@ -285,9 +285,9 @@ export default function Home() {
                   </svg>
                 </div>
                 <h3 className="font-bold text-slate-800 text-base">규격 미승인 시 100% 환불</h3>
-                <p className="mt-2 text-xs text-slate-500 leading-relaxed">
+                <div className="mt-2 text-xs text-slate-500 leading-relaxed">
                   혹시라도 구청이나 영사민원센터에서 반려될 경우, 신청 즉시 조건 없이 결제 금액의 100%를 환불해 드립니다.
-                </p>
+                </div>
               </div>
 
               <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
@@ -297,9 +297,9 @@ export default function Home() {
                   </svg>
                 </div>
                 <h3 className="font-bold text-slate-800 text-base">1/10의 합리적 가격</h3>
-                <p className="mt-2 text-xs text-slate-500 leading-relaxed">
+                <div className="mt-2 text-xs text-slate-500 leading-relaxed">
                   기본 2~3만 원대에 달하는 오프라인 스튜디오 비용 대신, 커피 한 잔 가격으로 동일 품격의 여권사진을 만드세요.
-                </p>
+                </div>
               </div>
 
               <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
@@ -309,9 +309,9 @@ export default function Home() {
                   </svg>
                 </div>
                 <h3 className="font-bold text-slate-800 text-base">300 DPI 인쇄 화질 보장</h3>
-                <p className="mt-2 text-xs text-slate-500 leading-relaxed">
+                <div className="mt-2 text-xs text-slate-500 leading-relaxed">
                   자체 고해상도 초해상화 알고리즘을 적용하여 확대 출력 및 모바일 행정 접수 시에도 선명하게 인화됩니다.
-                </p>
+                </div>
               </div>
             </div>
           </div>
@@ -323,9 +323,9 @@ export default function Home() {
             <h2 className="text-3xl font-bold tracking-tight text-slate-900">
               합리적인 단일 요금제
             </h2>
-            <p className="mt-3 text-slate-500 text-sm md:text-base">
+            <div className="mt-3 text-slate-500 text-sm md:text-base">
               추가 비용이나 정기 구독 유도 없이, 단 한 번의 결제로 영구 다운로드
-            </p>
+            </div>
           </div>
 
           <div className="mx-auto max-w-lg rounded-3xl border border-indigo-100 bg-white p-8 shadow-[0_12px_40px_-12px_rgba(79,70,229,0.08)] md:p-10 relative overflow-hidden">
@@ -348,9 +348,9 @@ export default function Home() {
               </div>
             </div>
 
-            <p className="mt-4 text-sm text-slate-500 leading-relaxed">
+            <div className="mt-4 text-sm text-slate-500 leading-relaxed">
               얼굴 비율 보정부터 고품질 흰색 배경 교체까지 모든 규격 보정이 포함되어 있으며, 최종 마음에 드실 때까지 재생성을 지원합니다.
-            </p>
+            </div>
 
             <ul className="mt-8 space-y-3.5 border-t border-slate-100 pt-8 text-sm text-slate-600">
               {[
@@ -379,9 +379,9 @@ export default function Home() {
             </div>
 
             <div className="mt-4 text-center">
-              <p className="text-[11px] text-slate-400">
+              <div className="text-[11px] text-slate-400">
                 신용카드, 카카오페이, 토스 등 간편결제 지원
-              </p>
+              </div>
             </div>
           </div>
         </section>
@@ -392,9 +392,9 @@ export default function Home() {
             <h2 className="text-3xl font-bold tracking-tight text-slate-900">
               자주 묻는 질문
             </h2>
-            <p className="mt-3 text-slate-500 text-sm md:text-base">
+            <div className="mt-3 text-slate-500 text-sm md:text-base">
               여권사진 촬영 전, 꼭 확인해 보아야 할 가이드를 안내해 드립니다.
-            </p>
+            </div>
           </div>
 
           <div className="mx-auto max-w-3xl space-y-4">
@@ -421,9 +421,9 @@ export default function Home() {
                   <span className="text-indigo-600">Q.</span>
                   {faq.q}
                 </h4>
-                <p className="mt-2.5 pl-6 text-xs md:text-sm text-slate-500 leading-relaxed">
+                <div className="mt-2.5 pl-6 text-xs md:text-sm text-slate-500 leading-relaxed">
                   {faq.a}
-                </p>
+                </div>
               </div>
             ))}
           </div>
@@ -436,9 +436,9 @@ export default function Home() {
             <h2 className="text-2xl font-bold md:text-4xl tracking-tight leading-snug">
               준비물은 단 하나, 당신의 셀카입니다.
             </h2>
-            <p className="mt-4 text-xs md:text-sm text-slate-300 max-w-md leading-relaxed">
+            <div className="mt-4 text-xs md:text-sm text-slate-300 max-w-md leading-relaxed">
               지금 바로 ProShot AI로 3초 만에 검증된 고화질 여권사진을 만들고 여권 발급 신청을 완료하세요.
-            </p>
+            </div>
             <a
               href="#upload"
               className="mt-8 inline-block rounded-2xl bg-white px-8 py-4 text-sm font-bold text-slate-900 transition-all duration-300 hover:bg-slate-100 hover:scale-105 active:scale-[0.98]"
@@ -452,7 +452,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-slate-200/60 bg-white/50 py-12 text-center text-xs text-slate-400">
         <div className="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p>© 2026 ProShot. All rights reserved.</p>
+          <div>© 2026 ProShot. All rights reserved.</div>
           <div className="flex items-center gap-6 text-slate-500 font-medium">
             <a href="#upload" className="hover:text-slate-800 transition-colors">여권사진 생성</a>
             <a href="#faq" className="hover:text-slate-800 transition-colors">자주 묻는 질문</a>
