@@ -43,6 +43,7 @@ export default function UploadCard() {
   const [showPaymentModal, setShowPaymentModal] = useState<boolean>(false);
   const [showRefundModal, setShowRefundModal] = useState<boolean>(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState<boolean>(false);
+  const [customerEmail, setCustomerEmail] = useState<string>("");
 
   // Toast notifications
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -294,13 +295,20 @@ export default function UploadCard() {
 
   // ── Toss Payments Standard Integration (SDK v2 – uses test_ck_ key) ──
   const handleTossPayment = async () => {
+    if (!customerEmail.trim() || !customerEmail.includes("@")) {
+      showToast("환불 및 결제 안내를 받으실 올바른 이메일 주소를 입력해 주세요.", "error");
+      return;
+    }
+
     setIsProcessingPayment(true);
     try {
       const tossPayments = await loadTossPayments(TOSS_CLIENT_KEY);
       const payment = tossPayments.payment({ customerKey: ANONYMOUS });
       const orderId = `order_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-      // Save orderId to localStorage so customer can retrieve it later for refund requests
+      
+      // Save orderId and customer email to localStorage for refund requests
       localStorage.setItem("proshot_last_order_id", orderId);
+      localStorage.setItem("proshot_customer_email", customerEmail.trim());
       const origin = window.location.origin;
 
       await payment.requestPayment({
@@ -758,6 +766,24 @@ export default function UploadCard() {
                 <li>✓ 민원센터 규격 미승인 시 100% 환불 보장</li>
                 <li>✓ 신용카드 / 카카오페이 / 토스페이 지원</li>
               </ul>
+            </div>
+
+            {/* Email Input Field */}
+            <div className="mt-4 text-left">
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                신청자 이메일 주소 <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="email"
+                placeholder="example@naver.com (환불 및 안내용)"
+                value={customerEmail}
+                onChange={(e) => setCustomerEmail(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:bg-white focus:outline-none"
+                required
+              />
+              <p className="mt-1 text-[10px] text-slate-400">
+                * 규격 미승인 환불 신청 시 주문 확인 및 안내 수단으로 사용됩니다.
+              </p>
             </div>
 
             <div className="mt-6 flex flex-col gap-2">

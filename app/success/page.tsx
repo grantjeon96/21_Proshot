@@ -11,8 +11,10 @@ function SuccessContent() {
   const [errorMsg, setErrorMsg] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [orderIdVal, setOrderIdVal] = useState<string>("");
+  const [customerEmailVal, setCustomerEmailVal] = useState<string>("");
   const [isDownloading, setIsDownloading] = useState(false);
   const [showRefundModal, setShowRefundModal] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
 
   useEffect(() => {
     const paymentKey = searchParams.get("paymentKey");
@@ -20,6 +22,8 @@ function SuccessContent() {
     const amount = searchParams.get("amount");
 
     if (orderId) setOrderIdVal(orderId);
+    const savedEmail = localStorage.getItem("proshot_customer_email");
+    if (savedEmail) setCustomerEmailVal(savedEmail);
 
     // Get saved image URL from localStorage
     const savedImg = localStorage.getItem("proshot_generated_image");
@@ -87,6 +91,13 @@ function SuccessContent() {
     }
   };
 
+  const handleCopyOrderId = () => {
+    if (!orderIdVal) return;
+    navigator.clipboard.writeText(orderIdVal);
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000);
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-3xl p-8 shadow-xl text-center border border-slate-100 animate-fade-in">
@@ -118,6 +129,35 @@ function SuccessContent() {
                 <img src={imageUrl} alt="결제 완료 여권사진" className="w-full aspect-[3/4] object-cover" />
               </div>
             )}
+
+            {/* Order ID & Notice Box */}
+            <div className="mt-5 w-full rounded-2xl bg-amber-50/80 border border-amber-200/80 p-4 text-left shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
+                  <span>📌</span> 주문 정보 보관 안내
+                </span>
+                <button
+                  onClick={handleCopyOrderId}
+                  className="text-[11px] font-bold text-amber-800 bg-amber-200/80 hover:bg-amber-300/80 px-2.5 py-1 rounded-lg transition-all active:scale-95"
+                >
+                  {isCopied ? "✓ 복사 완료" : "주문번호 복사"}
+                </button>
+              </div>
+              
+              <div className="mt-2 text-[11px] text-amber-950 font-mono font-bold bg-white/80 p-2.5 rounded-xl border border-amber-200/60 break-all select-all">
+                {orderIdVal || "주문번호 생성 완료"}
+              </div>
+
+              {customerEmailVal && (
+                <p className="mt-1.5 text-[11px] text-amber-900 font-medium">
+                  • 등록된 이메일: <span className="font-semibold text-slate-800">{customerEmailVal}</span>
+                </p>
+              )}
+
+              <p className="mt-2 text-[11px] text-amber-800/90 leading-relaxed font-medium">
+                ⚠️ <strong>주문번호를 꼭 기억(보관)해 주세요!</strong> 추후 규격 미승인 환불 신청 시 주문번호와 이메일 정보 불일치 시 환불 처리가 불가능합니다.
+              </p>
+            </div>
 
             {/* Action buttons */}
             <div className="mt-6 w-full flex flex-col gap-3">
@@ -152,17 +192,14 @@ function SuccessContent() {
             </div>
 
             {/* Refund & Guarantee Info */}
-            <div className="mt-6 pt-4 border-t border-slate-100 text-left text-[11px] text-slate-400 space-y-1">
-              <p>• 주문번호: <span className="font-mono text-slate-600 font-bold">{orderIdVal || "주문완료"}</span></p>
-              <div className="flex items-center justify-between pt-1">
-                <span>• 규격 미승인 시 100% 전액 환불 보장</span>
-                <button
-                  onClick={() => setShowRefundModal(true)}
-                  className="font-bold text-indigo-600 hover:underline"
-                >
-                  환불 신청 →
-                </button>
-              </div>
+            <div className="mt-6 pt-4 border-t border-slate-100 text-left text-[11px] text-slate-400 flex items-center justify-between">
+              <span>• 규격 미승인 시 100% 전액 환불 보장</span>
+              <button
+                onClick={() => setShowRefundModal(true)}
+                className="font-bold text-indigo-600 hover:underline"
+              >
+                환불 신청 →
+              </button>
             </div>
 
             <RefundModal

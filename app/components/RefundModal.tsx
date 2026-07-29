@@ -16,6 +16,12 @@ export default function RefundModal({ isOpen, onClose, defaultOrderId = "" }: Re
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
 
+  React.useEffect(() => {
+    if (defaultOrderId) setOrderId(defaultOrderId);
+    const savedEmail = localStorage.getItem("proshot_customer_email");
+    if (savedEmail) setEmail(savedEmail);
+  }, [defaultOrderId, isOpen]);
+
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
