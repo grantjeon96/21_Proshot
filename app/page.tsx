@@ -450,7 +450,16 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="border-t border-slate-200/60 bg-white/50 py-12 text-center text-xs text-slate-400">
-        <p>© 2026 ProShot. All rights reserved.</p>
+        <div className="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p>© 2026 ProShot. All rights reserved.</p>
+          <div className="flex items-center gap-6 text-slate-500 font-medium">
+            <a href="#upload" className="hover:text-slate-800 transition-colors">여권사진 생성</a>
+            <a href="#faq" className="hover:text-slate-800 transition-colors">자주 묻는 질문</a>
+            <a href="#upload" className="text-indigo-600 font-bold hover:underline transition-all">
+              🛡️ 규격 미승인 100% 환불 신청
+            </a>
+          </div>
+        </div>
       </footer>
     </div>
   );

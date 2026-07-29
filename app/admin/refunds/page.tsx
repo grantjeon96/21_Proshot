@@ -11,6 +11,14 @@ export default function AdminRefundsPage() {
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
 
+  // Change password modal state
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [currentPw, setCurrentPw] = useState("");
+  const [newPw, setNewPw] = useState("");
+  const [newPwConfirm, setNewPwConfirm] = useState("");
+  const [pwModalMsg, setPwModalMsg] = useState<{ text: string; type: "success" | "error" } | null>(null);
+  const [isChangingPw, setIsChangingPw] = useState(false);
+
   const fetchRefunds = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -32,13 +40,73 @@ export default function AdminRefundsPage() {
     }
   }, [isAuthenticated, fetchRefunds]);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === "proshot1234") {
-      setIsAuthenticated(true);
-      setMessage(null);
-    } else {
-      setMessage({ text: "비밀번호가 일치하지 않습니다.", type: "error" });
+    setMessage(null);
+    try {
+      const res = await fetch("/api/admin/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setIsAuthenticated(true);
+      } else {
+        setMessage({ text: data.error || "비밀번호가 일치하지 않습니다.", type: "error" });
+      }
+    } catch {
+      setMessage({ text: "로그인 처리 중 오류가 발생했습니다.", type: "error" });
+    }
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPwModalMsg(null);
+
+    if (newPw !== newPwConfirm) {
+      setPwModalMsg({ text: "새 비밀번호가 일치하지 않습니다.", type: "error" });
+      return;
+    }
+
+    if (newPw.length < 4) {
+      setPwModalMsg({ text: "새 비밀번호는 최소 4자 이상 입력해 주세요.", type: "error" });
+      return;
+    }
+
+    setIsChangingPw(true);
+
+    try {
+      const res = await fetch("/api/admin/auth", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentPassword: currentPw,
+          newPassword: newPw,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "비밀번호 변경 중 오류가 발생했습니다.");
+      }
+
+      setPwModalMsg({ text: "비밀번호가 성공적으로 변경되었습니다!", type: "success" });
+      setPassword(newPw); // Update active session password
+      setTimeout(() => {
+        setShowPasswordModal(false);
+        setCurrentPw("");
+        setNewPw("");
+        setNewPwConfirm("");
+        setPwModalMsg(null);
+      }, 1500);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "비밀번호 변경 실패";
+      setPwModalMsg({ text: msg, type: "error" });
+    } finally {
+      setIsChangingPw(false);
     }
   };
 
@@ -82,8 +150,8 @@ export default function AdminRefundsPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-        <div className="w-full max-w-sm bg-slate-800 rounded-3xl p-6 shadow-2xl border border-slate-700 text-center">
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+        <div className="w-full max-w-sm bg-slate-900 rounded-3xl p-6 shadow-2xl border border-slate-800 text-center">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-400 text-2xl font-bold">
             🔒
           </div>
@@ -99,10 +167,10 @@ export default function AdminRefundsPage() {
           <form onSubmit={handleLogin} className="mt-5 space-y-3">
             <input
               type="password"
-              placeholder="비밀번호 입력 (기본: proshot1234)"
+              placeholder="비밀번호 입력"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-xs text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
+              className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 text-xs text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
               required
             />
             <button
@@ -130,6 +198,12 @@ export default function AdminRefundsPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowPasswordModal(true)}
+              className="rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-xs font-medium text-indigo-400 hover:bg-slate-800 transition-all flex items-center gap-1.5"
+            >
+              🔑 비밀번호 변경
+            </button>
             <button
               onClick={fetchRefunds}
               className="rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 transition-all"
@@ -236,6 +310,91 @@ export default function AdminRefundsPage() {
           </div>
         )}
       </div>
+
+      {/* Change Password Modal */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+          <div className="relative w-full max-w-sm rounded-3xl bg-slate-900 p-6 shadow-2xl border border-slate-800 text-left">
+            <button
+              onClick={() => setShowPasswordModal(false)}
+              className="absolute top-4 right-4 text-slate-500 hover:text-slate-300 transition-colors"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <h3 className="text-base font-bold text-white flex items-center gap-2 mb-1">
+              🔑 비밀번호 변경
+            </h3>
+            <p className="text-xs text-slate-400 mb-4">관리자 콘솔 접속 비밀번호를 새로 설정합니다.</p>
+
+            {pwModalMsg && (
+              <div
+                className={`mb-4 p-3 rounded-xl text-xs font-medium ${
+                  pwModalMsg.type === "success"
+                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                    : "bg-rose-500/20 text-rose-300 border border-rose-500/30"
+                }`}
+              >
+                {pwModalMsg.text}
+              </div>
+            )}
+
+            <form onSubmit={handleChangePassword} className="space-y-3">
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-400 mb-1">현재 비밀번호</label>
+                <input
+                  type="password"
+                  value={currentPw}
+                  onChange={(e) => setCurrentPw(e.target.value)}
+                  className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-xs text-white focus:border-indigo-500 focus:outline-none"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-400 mb-1">새 비밀번호</label>
+                <input
+                  type="password"
+                  value={newPw}
+                  onChange={(e) => setNewPw(e.target.value)}
+                  className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-xs text-white focus:border-indigo-500 focus:outline-none"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-400 mb-1">새 비밀번호 확인</label>
+                <input
+                  type="password"
+                  value={newPwConfirm}
+                  onChange={(e) => setNewPwConfirm(e.target.value)}
+                  className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-xs text-white focus:border-indigo-500 focus:outline-none"
+                  required
+                />
+              </div>
+
+              <div className="pt-2 flex flex-col gap-2">
+                <button
+                  type="submit"
+                  disabled={isChangingPw}
+                  className="w-full rounded-xl bg-indigo-600 py-2.5 text-xs font-bold text-white hover:bg-indigo-500 transition-all shadow-md shadow-indigo-600/30 disabled:opacity-50"
+                >
+                  {isChangingPw ? "변경 중..." : "비밀번호 변경 저장"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowPasswordModal(false)}
+                  className="w-full rounded-xl border border-slate-800 py-2 text-center text-xs font-medium text-slate-400 hover:bg-slate-800 transition-all"
+                >
+                  취소
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

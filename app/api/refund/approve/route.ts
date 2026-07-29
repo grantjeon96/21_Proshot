@@ -15,7 +15,18 @@ export interface RefundRecord {
 }
 
 const dataFilePath = path.join(process.cwd(), "data", "refunds.json");
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "proshot1234"; // Default admin password
+const configPath = path.join(process.cwd(), "data", "admin-config.json");
+
+function getAdminPassword(): string {
+  try {
+    if (fs.existsSync(configPath)) {
+      const content = fs.readFileSync(configPath, "utf-8");
+      const data = JSON.parse(content);
+      if (data && data.password) return data.password;
+    }
+  } catch {}
+  return process.env.ADMIN_PASSWORD || "proshot1234";
+}
 
 function getRefunds(): RefundRecord[] {
   try {
@@ -44,7 +55,8 @@ export async function POST(req: NextRequest) {
     const { refundId, action, adminPassword, rejectReason } = body;
 
     // Validate admin password
-    if (adminPassword !== ADMIN_PASSWORD) {
+    const currentPassword = getAdminPassword();
+    if (adminPassword !== currentPassword) {
       return NextResponse.json(
         { error: "관리자 비밀번호가 일치하지 않습니다." },
         { status: 401 }
