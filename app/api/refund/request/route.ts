@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
+import redis from "@/app/lib/redis";
 
 export interface RefundRecord {
   id: string;
@@ -14,31 +13,23 @@ export interface RefundRecord {
   rejectReason?: string;
 }
 
-const dataFilePath = path.join(process.cwd(), "data", "refunds.json");
+const REFUNDS_KEY = "proshot:refunds";
 
-function getRefunds(): RefundRecord[] {
+async function getRefunds(): Promise<RefundRecord[]> {
   try {
-    if (!fs.existsSync(dataFilePath)) {
-      fs.mkdirSync(path.dirname(dataFilePath), { recursive: true });
-      fs.writeFileSync(dataFilePath, "[]", "utf-8");
-      return [];
-    }
-    const content = fs.readFileSync(dataFilePath, "utf-8");
-    return JSON.parse(content || "[]");
+    const data = await redis.get<RefundRecord[]>(REFUNDS_KEY);
+    return data || [];
   } catch (err) {
-    console.error("Error reading refunds data:", err);
+    console.error("Error reading refunds from Redis:", err);
     return [];
   }
 }
 
-function saveRefunds(records: RefundRecord[]) {
+async function saveRefunds(records: RefundRecord[]) {
   try {
-    if (!fs.existsSync(path.dirname(dataFilePath))) {
-      fs.mkdirSync(path.dirname(dataFilePath), { recursive: true });
-    }
-    fs.writeFileSync(dataFilePath, JSON.stringify(records, null, 2), "utf-8");
+    await redis.set(REFUNDS_KEY, records);
   } catch (err) {
-    console.error("Error saving refunds data:", err);
+    console.error("Error saving refunds to Redis:", err);
   }
 }
 
@@ -54,7 +45,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const refunds = getRefunds();
+    const refunds = await getRefunds();
 
     // Check duplicate pending or approved requests
     const existing = refunds.find(
@@ -85,7 +76,7 @@ export async function POST(req: NextRequest) {
     };
 
     refunds.unshift(newRecord);
-    saveRefunds(refunds);
+    await saveRefunds(refunds);
 
     return NextResponse.json({
       success: true,
@@ -102,6 +93,6 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET() {
-  const refunds = getRefunds();
+  const refunds = await getRefunds();
   return NextResponse.json({ refunds });
 }

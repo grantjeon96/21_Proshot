@@ -1,51 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
+import redis from "@/app/lib/redis";
+import { RefundRecord } from "@/app/api/refund/request/route";
 
-export interface RefundRecord {
-  id: string;
-  orderId: string;
-  email: string;
-  reason: string;
-  details: string;
-  status: "pending" | "approved" | "rejected";
-  createdAt: string;
-  refundedAt?: string;
-  rejectReason?: string;
-}
+const REFUNDS_KEY = "proshot:refunds";
+const ADMIN_PASSWORD_KEY = "proshot:admin_password";
 
-const dataFilePath = path.join(process.cwd(), "data", "refunds.json");
-const configPath = path.join(process.cwd(), "data", "admin-config.json");
-
-function getAdminPassword(): string {
+async function getAdminPassword(): Promise<string> {
   try {
-    if (fs.existsSync(configPath)) {
-      const content = fs.readFileSync(configPath, "utf-8");
-      const data = JSON.parse(content);
-      if (data && data.password) return data.password;
-    }
+    const password = await redis.get<string>(ADMIN_PASSWORD_KEY);
+    if (password) return password;
   } catch {}
   return process.env.ADMIN_PASSWORD || "proshot1234";
 }
 
-function getRefunds(): RefundRecord[] {
+async function getRefunds(): Promise<RefundRecord[]> {
   try {
-    if (!fs.existsSync(dataFilePath)) return [];
-    const content = fs.readFileSync(dataFilePath, "utf-8");
-    return JSON.parse(content || "[]");
+    const data = await redis.get<RefundRecord[]>(REFUNDS_KEY);
+    return data || [];
   } catch {
     return [];
   }
 }
 
-function saveRefunds(records: RefundRecord[]) {
+async function saveRefunds(records: RefundRecord[]) {
   try {
-    if (!fs.existsSync(path.dirname(dataFilePath))) {
-      fs.mkdirSync(path.dirname(dataFilePath), { recursive: true });
-    }
-    fs.writeFileSync(dataFilePath, JSON.stringify(records, null, 2), "utf-8");
+    await redis.set(REFUNDS_KEY, records);
   } catch (err) {
-    console.error("Error saving refunds data:", err);
+    console.error("Error saving refunds to Redis:", err);
   }
 }
 
@@ -55,7 +36,7 @@ export async function POST(req: NextRequest) {
     const { refundId, action, adminPassword, rejectReason } = body;
 
     // Validate admin password
-    const currentPassword = getAdminPassword();
+    const currentPassword = await getAdminPassword();
     if (adminPassword !== currentPassword) {
       return NextResponse.json(
         { error: "관리자 비밀번호가 일치하지 않습니다." },
@@ -70,7 +51,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const refunds = getRefunds();
+    const refunds = await getRefunds();
     const index = refunds.findIndex((r) => r.id === refundId);
 
     if (index === -1) {
@@ -120,7 +101,7 @@ export async function POST(req: NextRequest) {
     }
 
     refunds[index] = record;
-    saveRefunds(refunds);
+    await saveRefunds(refunds);
 
     return NextResponse.json({
       success: true,

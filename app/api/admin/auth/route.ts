@@ -1,35 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
+import redis from "@/app/lib/redis";
 
-const configPath = path.join(process.cwd(), "data", "admin-config.json");
+const ADMIN_PASSWORD_KEY = "proshot:admin_password";
+const DEFAULT_PASSWORD = "proshot1234";
 
-function getAdminPassword(): string {
+async function getAdminPassword(): Promise<string> {
   try {
-    if (fs.existsSync(configPath)) {
-      const content = fs.readFileSync(configPath, "utf-8");
-      const data = JSON.parse(content);
-      if (data && data.password) return data.password;
-    }
+    const password = await redis.get<string>(ADMIN_PASSWORD_KEY);
+    if (password) return password;
   } catch (e) {
-    console.error("Error reading admin config:", e);
+    console.error("Error reading admin password from Redis:", e);
   }
-  return process.env.ADMIN_PASSWORD || "proshot1234";
+  return process.env.ADMIN_PASSWORD || DEFAULT_PASSWORD;
 }
 
-function saveAdminPassword(password: string) {
-  const dir = path.dirname(configPath);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+async function saveAdminPassword(password: string) {
+  try {
+    await redis.set(ADMIN_PASSWORD_KEY, password);
+  } catch (e) {
+    console.error("Error saving admin password to Redis:", e);
+    throw e;
   }
-  fs.writeFileSync(configPath, JSON.stringify({ password }, null, 2), "utf-8");
 }
 
 // POST: Verify password
 export async function POST(req: NextRequest) {
   try {
     const { password } = await req.json();
-    const currentPassword = getAdminPassword();
+    const currentPassword = await getAdminPassword();
 
     if (password === currentPassword) {
       return NextResponse.json({ success: true, message: "인증에 성공했습니다." });
@@ -48,7 +46,7 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const { currentPassword, newPassword } = await req.json();
-    const existingPassword = getAdminPassword();
+    const existingPassword = await getAdminPassword();
 
     if (currentPassword !== existingPassword) {
       return NextResponse.json(
@@ -64,7 +62,7 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    saveAdminPassword(newPassword);
+    await saveAdminPassword(newPassword);
     return NextResponse.json({
       success: true,
       message: "비밀번호가 성공적으로 변경되었습니다. 다음 로그인부터 적용됩니다.",
