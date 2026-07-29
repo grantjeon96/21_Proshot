@@ -74,7 +74,8 @@ function SuccessContent() {
 
       const link = document.createElement("a");
       link.href = blobUrl;
-      link.download = `proshot_passport_photo_${Date.now()}.png`;
+      const cleanOrder = orderIdVal ? orderIdVal.replace(/[^a-zA-Z0-9_-]/g, "") : `order_${Date.now()}`;
+      link.download = `proshot_passport_photo_${cleanOrder}.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
