@@ -48,7 +48,7 @@ export default function Home() {
       </header>
 
       {/* Main Container */}
-      <main className="mx-auto max-w-5xl px-4 pb-24">
+      <main role="main" className="mx-auto max-w-5xl px-4 pb-24">
         {/* Hero Section */}
         <section className="flex flex-col items-center justify-center pt-20 pb-16 text-center md:pt-32 md:pb-24">
           {/* Badge */}
@@ -66,9 +66,9 @@ export default function Home() {
           </h1>
 
           {/* Subtitle */}
-          <p className="mt-8 max-w-xl text-base text-slate-600 md:text-lg leading-relaxed font-normal">
+          <div className="mt-8 max-w-xl text-base text-slate-600 md:text-lg leading-relaxed font-normal">
             스튜디오에 직접 찾아가는 번거로움 없이, 집에서 찍은 셀카 한 장으로 3초 만에 외교부 규격에 완벽히 부합하는 고화질 여권사진을 완성해보세요.
-          </p>
+          </div>
 
           {/* CTA Buttons */}
           <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center items-center w-full max-w-md">
