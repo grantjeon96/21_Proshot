@@ -1,5 +1,6 @@
 import Image from "next/image";
 import UploadCard from "./components/UploadCard";
+import FooterRefundButton from "./components/FooterRefundButton";
 
 export default function Home() {
   return (
@@ -455,9 +456,7 @@ export default function Home() {
           <div className="flex items-center gap-6 text-slate-500 font-medium">
             <a href="#upload" className="hover:text-slate-800 transition-colors">여권사진 생성</a>
             <a href="#faq" className="hover:text-slate-800 transition-colors">자주 묻는 질문</a>
-            <a href="#upload" className="text-indigo-600 font-bold hover:underline transition-all">
-              🛡️ 규격 미승인 100% 환불 신청
-            </a>
+            <FooterRefundButton />
           </div>
         </div>
       </footer>

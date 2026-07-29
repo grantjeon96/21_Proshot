@@ -299,6 +299,8 @@ export default function UploadCard() {
       const tossPayments = await loadTossPayments(TOSS_CLIENT_KEY);
       const payment = tossPayments.payment({ customerKey: ANONYMOUS });
       const orderId = `order_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      // Save orderId to localStorage so customer can retrieve it later for refund requests
+      localStorage.setItem("proshot_last_order_id", orderId);
       const origin = window.location.origin;
 
       await payment.requestPayment({
