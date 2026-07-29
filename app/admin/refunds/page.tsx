@@ -271,7 +271,16 @@ export default function AdminRefundsPage() {
                     </span>
                   </div>
 
-                  <div className="text-xs text-slate-300 space-y-1">
+                  <div className="text-xs text-slate-300 space-y-1.5">
+                    {item.tossVerified && (
+                      <div className="inline-flex items-center gap-2 rounded-xl bg-emerald-500/10 px-3 py-1.5 border border-emerald-500/20 text-emerald-400 text-[11px] font-semibold">
+                        <span>🛡️ 토스 실결제 검증완료</span>
+                        <span>•</span>
+                        <span>금액: ₩{(item.amount || 4900).toLocaleString()}</span>
+                        <span>•</span>
+                        <span>수단: {item.method || "카드"}</span>
+                      </div>
+                    )}
                     <p>
                       <strong className="text-slate-400">신청자 연락처:</strong> {item.email}
                     </p>
